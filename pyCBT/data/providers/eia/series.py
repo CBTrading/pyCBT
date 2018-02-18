@@ -40,9 +40,8 @@ class EIASeries():
         data = json.loads(res.read())
         table = data.get("series")[0].get("data")
 
-        df = pd.DataFrame(data=table, columns=("DATE {}".format(self.series_name)).split())
-        df["DATE"] = df["DATE"].apply(lambda x: "{}-{}-{}".format(x[:4], x[4:6], x[6:]))
-        df["DATE"] = pd.to_datetime(production["DATE"])
+        df = pd.DataFrame(data=table, columns=("DATE {}".format(series_name)).split())
+        df["DATE"] = pd.to_datetime(df["DATE"], format=("%Y%m" if len(df["DATE"][0])==6 else None))
 
         self.data_series[series_name] = df
 
