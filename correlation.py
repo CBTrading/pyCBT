@@ -6,7 +6,7 @@
 # draw correlation map
 # return ffn/plt figure (if main)
 # return Highcharts object (if module)
-import ffn, sys
+import ffn
 
 from collections import OrderedDict
 from itertools import product
@@ -27,12 +27,11 @@ VOLUME = "VOLUME"
 pairs = get_mt_pairs()
 
 PAIRS = pairs.keys()[:10]
-# for kw in PAIRS:
-#     (pairs[kw]["CLOSE"]/pairs[kw]["CLOSE"].max()).plot()
 
 # extract price for each instrument
 price = pd.DataFrame(index=range(5*TIME_FRAME))
-for pair_name in PAIRS: price[pair_name] = pairs[pair_name].filter(like=PRICE).values[-5*TIME_FRAME:]
+for pair_name in PAIRS:
+    price[pair_name] = pairs[pair_name].filter(like=PRICE).values[-5*TIME_FRAME:]
 
 # compute correlations
 C = pd.DataFrame(data=np.nan, index=PAIRS, columns=PAIRS)

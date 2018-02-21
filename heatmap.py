@@ -1,4 +1,4 @@
-import ffn, sys
+import ffn
 
 from collections import OrderedDict
 from itertools import product
@@ -10,7 +10,7 @@ plt = ffn.core.plt
 
 # define constants
 # time frame in periods/minutes (because data is sampled in minutes)
-TIME_FRAME = 30
+TIME_FRAME = 5*30
 # define target price
 PRICE = "CLOSE"
 # define volume column
