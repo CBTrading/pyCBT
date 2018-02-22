@@ -22,7 +22,7 @@ def get_mt_pairs():
             filename = os.path.basename(filepath).split(".csv")[0][:-2]
 
             pairs[filename] = pd.read_csv(filepath, index_col=0, parse_dates=True,
-                                          names=OHLCV, usecols=OHLCV)
+                                          names=["DATE"]+OHLCV, usecols=["DATE"]+OHLCV)
 
             # ONLY FOR DEBUGGING
             # print
