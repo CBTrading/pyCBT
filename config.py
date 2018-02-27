@@ -7,9 +7,9 @@ from copy import copy
 from pyCBT.data.providers.oanda import account
 
 account_attrs = copy(account.ATTRS)
-account_attrs["active_account"] = dict(
-    help="Active account"
-)
+# account_attrs["active_account"] = dict(
+#     help="Active account"
+# )
 
 parser = argparse.ArgumentParser()
 

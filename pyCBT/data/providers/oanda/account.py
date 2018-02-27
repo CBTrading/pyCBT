@@ -5,6 +5,7 @@ from ruamel_yaml import YAML
 import oandapyV20
 from oandapyV20.endpoints.accounts import AccountList
 
+# build dictionaries: attr_name, attr_default, attr_help, attr_type, attr_choices
 ATTRS = OrderedDict(
     environment=dict(default="practice", help="Server environment", choices=["practice", "live"]),
     port=dict(type=int, default=443, help="Server port"),
@@ -20,6 +21,7 @@ class Config(object):
         # use kwargs to set default values in self.account_attrs
         self.account_attrs = ATTRS
         for attr in cmd_kwargs:
+            # THIS BREAKS WHEN PASSING active_account ARGUMENT -------------------------------------
             self.account_attrs[attr]["default"] = cmd_kwargs.get(attr)
         self.FILENAME = os.path.join(DATADIR, "providers/oanda/.oanda-account-{}.yml")
         # ask for environment (URL, choices: practice, live)
