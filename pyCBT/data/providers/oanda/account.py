@@ -28,10 +28,12 @@ class Config(object):
             choices=self.account_attrs["environment"]["choices"],
             default=self.account_attrs["environment"]["default"],
             question=self.account_attrs["environment"]["help"]
-
         )
         # ask for token
-        self.token = self.ask_plain(header=self.account_attrs["token"]["help"])
+        self.token = self.ask_plain(
+            header=self.account_attrs["token"]["help"],
+            default=self.account_attrs["token"]["default"]
+        )
         # get accounts
         self.accounts = self.get_accounts(self.token, self.environment)
         # ask for active account
