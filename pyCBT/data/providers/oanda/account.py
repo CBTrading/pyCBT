@@ -1,6 +1,7 @@
-import os, yaml
+import sys, os
 from pyCBT.constants import DATADIR
 from collections import OrderedDict
+from ruamel_yaml import YAML
 import oandapyV20
 from oandapyV20.endpoints.accounts import AccountList
 
@@ -10,9 +11,7 @@ ATTRS = OrderedDict(
     ssl=dict(type=bool, default=True, help="Use SSL protocol?"),
     token=dict(help="API authorization token"),
     username=dict(help="Username of the account owner"),
-    datetime_format=dict(default="RFC3339", help="Datetime format", choices=["RFC3339", "UNIX"]),
-    accounts=dict(help="List of accounts owned by user"),
-    active_account=dict(help="Active account")
+    datetime_format=dict(default="RFC3339", help="Datetime format", choices=["RFC3339", "UNIX"])
 )
 
 class Config(object):
@@ -39,7 +38,7 @@ class Config(object):
         self.active_account = self.ask_choice(
             header="Available accounts",
             choices=self.accounts,
-            question=self.account_attrs["active_account"]["help"]
+            question="Active account"
         )
         # if config file exist and not new
         self.filename = self.FILENAME.format(self.active_account)
@@ -61,7 +60,7 @@ class Config(object):
                 )
                 self.username = self.ask_plain(
                     header=self.account_attrs["username"]["help"],
-                    default=self.from_file["ssl"]
+                    default=self.from_file["username"]
                 )
                 self.datetime_format = self.ask_choice(
                     header="Available datetime formats",
@@ -70,8 +69,8 @@ class Config(object):
                     default=self.from_file["datetime_format"]
                 )
         #   else
-        #       set rest of parameters using default values
             else:
+        #       set rest of parameters using default values
                 self.port = self.from_file["port"]
                 self.ssl = self.from_file["ssl"]
                 self.username = self.from_file["username"]
@@ -108,11 +107,14 @@ class Config(object):
             value = raw_input("{}: ".format(header))
         else:
             value = raw_input("{} [{}]: ".format(header, default))
-            if value == "": value = default
+            if value == "": value = str(default)
         if dtype is None:
             return value
         else:
-            return dtype(value)
+            value = eval(value)
+            if not type(value) == dtype:
+                raise TypeError("{} is not {} type".format(value, dtype))
+            return value
 
     def ask_choice(self, header, choices, question, default=None, dtype=None):
 
@@ -142,31 +144,36 @@ class Config(object):
         return [account["id"] for account in r.response["accounts"]]
 
     def get_from_file(self, filename):
-        return yaml.load(open(filename, "r"))
+        yaml = YAML()
+        with open(filename, "r") as file:
+            info = yaml.load(file)
+        return info
 
     def set_to_file(self, filename):
-        # with open("{}/.pycbt-config.yml".format(os.environ["HOME"]), "w") as conf_file:
-        #
-        #     conf_file.write("hostname: {}{}".format(account_info["hostname"], os.linesep))
-        #     conf_file.write("streaming_hostname: {}{}".format(account_info["streaming_hostname"], os.linesep))
-        #     conf_file.write("port: {}{}".format(account_info["port"], os.linesep))
-        #     conf_file.write("token: {}{}".format(account_info["token"], os.linesep))
-        #     conf_file.write("username: {}{}".format(account_info["username"], os.linesep))
-        #     conf_file.write("accounts:{}".format(os.linesep))
-        #     for account in account_info["accounts"]:
-        #         conf_file.write("- {}{}".format(account["id"], os.linesep))
-        #     conf_file.write("active_account: {}{}".format(account_info["active_account"], os.linesep))
-        #     conf_file.write(os.linesep)
-        return yaml.dump(open(filename, "w"))
+        yaml = YAML()
+        with open(filename, "w") as file:
+            yaml.dump(self.info, file)
 
     def set_info(self):
-        return OrderedDict(
-            environment=self.environment,
-            port=self.port,
-            ssl=self.ssl,
-            token=self.token,
-            username=self.username,
-            datetime_format=self.datetime_format,
-            accounts=self.accounts,
-            active_account=self.active_account
-        )
+        info = OrderedDict(zip(
+        [
+            "environment",
+            "port",
+            "ssl",
+            "token",
+            "username",
+            "datetime_format",
+            "accounts",
+            "active_account"
+        ],
+        [
+            self.environment,
+            self.port,
+            self.ssl,
+            self.token,
+            self.username,
+            self.datetime_format,
+            self.accounts,
+            self.active_account
+        ]))
+        return info
