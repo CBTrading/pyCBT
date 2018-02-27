@@ -107,3 +107,4 @@ venv.bak/
 
 *.csv
 *.p
+*.yml
