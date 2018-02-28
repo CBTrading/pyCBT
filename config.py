@@ -2,41 +2,82 @@
 #
 # This script writes the configuration file for using the OANDA API
 
-import argparse, os
+import argparse, os, sys
 from copy import copy
+from collections import OrderedDict
 from pyCBT.data.providers.oanda import account
+from pyCBT.constants import DATADIR
 
-account_attrs = copy(account.ATTRS)
-# account_attrs["active_account"] = dict(
-#     help="Active account"
-# )
-
+# define parser
 parser = argparse.ArgumentParser()
-
-for arg in account_attrs.keys():
+# define config
+config = account.Config()
+# add parameters to parser
+for arg in config.attr_names:
+    # don't include accounts in parser
+    if arg == "accounts": continue
     # define attribute keywords for safe manipulation
-    kwargs = copy(account_attrs[arg])
-    # remove choices
-    if kwargs.has_key("choices"): kwargs.pop("choices")
-    # remove default values
-    if kwargs.has_key("default"): kwargs.pop("default")
+    kwargs = OrderedDict()
+    kwargs["help"] = config.attr_helps[arg]
+    if config.attr_types[arg] is not None:
+        kwargs["type"] = config.attr_types[arg]
     # add attribute to parser
     parser.add_argument("--{}".format(arg), **kwargs)
-
+# add interactive option
+parser.add_argument("--interactive", help="Update config attributes interatively", action="store_true")
 # parse arguments from command line (cmd)
 args = parser.parse_args()
 # build cmd arguments for configuration file
 cmd_kwargs = dict(args._get_kwargs())
-kw_toremove = []
-for attr in cmd_kwargs:
-    # remove None values
-    if cmd_kwargs[attr] is None:
-        kw_toremove.append(attr)
-for attr in kw_toremove: cmd_kwargs.pop(attr)
-
-# create config object
-config = account.Config(interactive=True, **cmd_kwargs)
-# build account summary
-account_info = config.info
-# dump summary to default file
-config.set_to_file(config.filename)
+cmd_kwargs.pop("interactive")
+# clean None values from cmd_kwargs
+cmd_kwargs = dict((arg, val) for arg, val in cmd_kwargs.iteritems() if val is not None)
+# check if 'active_account' is in command line arguments
+fil_kwargs = OrderedDict()
+if cmd_kwargs.has_key("active_account"):
+    # define filename template
+    filename = os.path.join(DATADIR, "providers/oanda/.oanda-account-{}.yml")
+    # define final filename
+    filename = filename.format(cmd_kwargs.get("active_account"))
+    # check if config file already exist
+    if os.path.isfile(filename):
+        response = "y"
+        if args.interactive:
+            print
+            response = raw_input("Going to load config file '{}' [Y/n]: ".format(os.path.basename(filename)))
+        if not response or response.lower().startswith("y"):
+            with open(filename, "r") as IN:
+                fil_kwargs.update(config.get_from_file(IN))
+# update attribute defaults to file if available & command line argument values, in that order
+config.update_defaults(**fil_kwargs)
+config.update_defaults(**cmd_kwargs)
+# ask/set account attributes
+# ask if interactive or fil_kwargs is empty
+if args.interactive or not fil_kwargs:
+    config.ask_account()
+    config.ask_attributes()
+else:
+    config.set_account()
+    config.set_attributes()
+# set summary config
+config.set_summary()
+# display summary
+print
+print "Summary config:"
+print
+config.set_to_file(sys.stdout)
+# save to file?
+# define filename template
+filename = os.path.join(DATADIR, "providers/oanda/.oanda-account-{}.yml")
+# define final filename
+filename = filename.format(cmd_kwargs.get("active_account"))
+# default response
+response = "n"
+print
+response = raw_input("Save summary to '{}' [y/N]: ".format(os.path.basename(filename)))
+if response.lower().startswith("y"):
+    with open(filename, "w") as OUT:
+        config.set_to_file(OUT)
+    if args.interactive:
+        print "Config file saved."
+print

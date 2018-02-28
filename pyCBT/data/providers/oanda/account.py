@@ -1,19 +1,9 @@
 import sys, os
-from pyCBT.constants import DATADIR
+
 from collections import OrderedDict
 from ruamel_yaml import YAML
 import oandapyV20
 from oandapyV20.endpoints.accounts import AccountList
-
-# ERROR: build dictionaries: attr_name, attr_default, attr_help, attr_type, attr_choices
-ATTRS = OrderedDict(
-    environment=dict(default="practice", help="Server environment", choices=["practice", "live"]),
-    port=dict(type=int, default=443, help="Server port"),
-    ssl=dict(type=bool, default=True, help="Use SSL protocol?"),
-    token=dict(help="API authorization token"),
-    username=dict(help="Username of the account owner"),
-    datetime_format=dict(default="RFC3339", help="Datetime format", choices=["RFC3339", "UNIX"])
-)
 
 class Config(object):
     """Given a OANDA token generates config summary that can be stored as a file
@@ -24,113 +14,116 @@ class Config(object):
 
     Parameters
     ----------
-    new : boolean, optional
-        start new config summary. Defaults to False.
-    interactive : boolean, optional
-        ask for user input while setting account attributes. Defaults to False
-    **cmd_kwargs : dictionary, optional
+    **kwargs : dictionary, optional
         keyword attributes that can be passed through command line. Valid keys
         are:
 
         * environment: API url environment: 'practice' or 'live'.
         * port: port number for submmitting requests.
         * ssl: use SSL protocol or not.
+        * timeout: lifetime of the pending request in seconds.
         * token: the access token given by OANDA.
         * username: the user holding the token.
+        * timezone: timezone for series alignment.
         * datetime_format: format used for datetime strings: 'RFC3339' or 'UNIX'.
+        * accounts: accounts registered for given a token.
+        * active_account: currently used account.
     """
 
-    def __init__(self, new=False, interactive=False, **cmd_kwargs):
+    def __init__(self):
 
-        # ERROR: ask config info when requested not on init
-        # use kwargs to set default values in self.account_attrs
-        self.account_attrs = ATTRS
-        for attr in cmd_kwargs:
-        # ERROR: THIS BREAKS WHEN PASSING active_account ARGUMENT ----------------------------------
-            self.account_attrs[attr]["default"] = cmd_kwargs.get(attr)
-        self.FILENAME = os.path.join(DATADIR, "providers/oanda/.oanda-account-{}.yml")
-        # ask for environment (URL, choices: practice, live)
-        self.environment = self.ask_choice(
-            header="Available environments",
-            choices=self.account_attrs["environment"]["choices"],
-            default=self.account_attrs["environment"]["default"],
-            question=self.account_attrs["environment"]["help"]
-        )
-        # ask for token
-        self.token = self.ask_plain(
-            header=self.account_attrs["token"]["help"],
-            default=self.account_attrs["token"]["default"]
-        )
-        # get accounts
-        self.accounts = self.get_accounts(self.token, self.environment)
-        # ask for active account
-        self.active_account = self.ask_choice(
-            header="Available accounts",
-            choices=self.accounts,
-            question="Active account"
-        )
-        # if config file exist and not new
-        self.filename = self.FILENAME.format(self.active_account)
-        if os.path.isfile(self.filename) and not new:
-        #   read account info
-            self.from_file = self.get_from_file(self.filename)
-        #   if interactive
-            if interactive:
-        #       ask for rest of parameters using config file as default values
-                self.port = self.ask_plain(
-                    header=self.account_attrs["port"]["help"],
-                    default=self.from_file["port"],
-                    dtype=type(self.from_file["port"])
-                )
-                self.ssl = self.ask_plain(
-                    header=self.account_attrs["ssl"]["help"],
-                    default=self.from_file["ssl"],
-                    dtype=type(self.from_file["ssl"])
-                )
-                self.username = self.ask_plain(
-                    header=self.account_attrs["username"]["help"],
-                    default=self.from_file["username"]
-                )
-                self.datetime_format = self.ask_choice(
-                    header="Available datetime formats",
-                    choices=self.account_attrs["datetime_format"]["choices"],
-                    question=self.account_attrs["datetime_format"]["help"],
-                    default=self.from_file["datetime_format"]
-                )
-        #   else generate config from file without asking
-            else:
-        #       set rest of parameters using default values
-                self.port = self.from_file["port"]
-                self.ssl = self.from_file["ssl"]
-                self.username = self.from_file["username"]
-                self.datetime_format = self.from_file["datetime_format"]
-        # else generate new config
-        else:
-        #   ask for rest of parameters
-            self.port = self.ask_plain(
-                header=self.account_attrs["port"]["help"],
-                default=self.account_attrs["port"]["default"],
-                dtype=self.account_attrs["port"]["type"]
-            )
-            self.ssl = self.ask_plain(
-                header=self.account_attrs["ssl"]["help"],
-                default=self.account_attrs["ssl"]["default"],
-                dtype=self.account_attrs["ssl"]["type"]
-            )
-            self.username = self.ask_plain(
-                header=self.account_attrs["username"]["help"]
-            )
-            self.datetime_format = self.ask_choice(
-                header="Available datetime formats",
-                choices=self.account_attrs["datetime_format"]["choices"],
-                question=self.account_attrs["datetime_format"]["help"],
-                default=self.account_attrs["datetime_format"]["default"]
-            )
-        # define config summary
-        self.info = self.set_info()
+        self.attr_names = [
+            "environment",
+            "port",
+            "ssl",
+            "timeout",
+            "token",
+            "username",
+            "timezone",
+            "datetime_format",
+            "accounts",
+            "active_account"
+        ]
+        self.attr_defaults = OrderedDict(zip(
+            self.attr_names,
+            [
+                "practice",
+                443,
+                True,
+                1.0,
+                None,
+                None,
+                "UTC",
+                "RFC3339",
+                None,
+                None
+            ]
+        ))
+        self.attr_helps = OrderedDict(zip(
+            self.attr_names,
+            [
+                "Server environment",
+                "Server port",
+                "Use SSL protocol?",
+                "Timeout of the requests in seconds",
+                "API authorization token",
+                "Username of the account owner",
+                "Timezone for series alignment",
+                "Datetime format",
+                "Accounts owned by user",
+                "Currently active account"
+            ]
+        ))
+        self.attr_types = OrderedDict(zip(
+            self.attr_names,
+            [
+                None,
+                int,
+                bool,
+                float,
+                None,
+                None,
+                None,
+                None,
+                list,
+                None
+            ]
+        ))
+        self.attr_choices = OrderedDict(zip(
+            self.attr_names,
+            [
+                ("practice", "live"),
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+                ("RFC3339", "UNIX"),
+                None,
+                None
+            ]
+        ))
 
-    # ERROR: define method for reading config file from account ID
-    # ERROR: define method for asking config parameters from new or file (not) interactively
+        self.environment = None
+        self.port = None
+        self.ssl = None
+        self.timeout = None
+        self.token = None
+        self.username = None
+        self.timezone = None
+        self.datetime_format = None
+        self.accounts = None
+        self.active_account = None
+
+        self.summary = None
+
+    def update_defaults(self, **kwargs):
+        """Update default attribute values to given keyword arguments
+        """
+        self.attr_defaults.update(kwargs)
+        return None
+
     def ask_plain(self, header, default=None, dtype=None):
         """Ask for user input for a given account attribute
 
@@ -169,7 +162,7 @@ class Config(object):
                 raise TypeError("{} is not {} type".format(value, dtype))
             return value
 
-    def ask_choice(self, header, choices, question, default=None, dtype=None):
+    def ask_choice(self, header, choices, question, default=None):
         """Ask user to choose value for given attribute from several options
 
         Parameters
@@ -182,8 +175,6 @@ class Config(object):
             Ask user to choose one of the options.
         default : any
             Default value for the attribute.
-        dtype : type object, optional
-            Data type to cast value given by user.
         """
 
         # if only one choice, make it default choice
@@ -209,79 +200,116 @@ class Config(object):
                 select = i_default - 1
             else:
                 select = int(select) - 1
-        # if not given data type
-        if dtype is None:
-        #   return string with selected choice
-            return choices[select]
-        else:
-        #   else cast selected choice to given type and return it
-        # ERROR: try eval then raise error
-        # ERROR: choices are already of the desired type
-            return dtype(choices[select])
+        # return selected choice
+        return choices[select]
 
-    def get_accounts(self, token, environment):
-        """Get accounts from user token
-
-        Parameters
-        ----------
-        token : string
-            Access token given by OANDA.
-        environment : string
-            API url environment: 'practice' or 'live'.
+    def ask_account(self):
+        """Ask for account attributes from command line
         """
-
-        # open API client
-        api = oandapyV20.API(access_token=token, environment=environment)
+        # ask for environment or use command line provided
+        self.environment = self.ask_choice(
+            header="Available environments",
+            choices=self.attr_choices["environment"],
+            default=self.attr_defaults["environment"],
+            question=self.attr_helps["environment"]
+        )
+        # ask for token
+        self.token = self.ask_plain(
+            header=self.attr_helps["token"],
+            default=self.attr_defaults["token"]
+        )
+        # get accounts
+        api = oandapyV20.API(access_token=self.token, environment=self.environment)
         # generate request to appropriate endpoint
         r = AccountList()
         api.request(r)
-        # return list of account IDs
-        return [account["id"] for account in r.response["accounts"]]
+        # store list of account IDs
+        self.accounts = [account["id"] for account in r.response["accounts"]]
+        # ask for active account
+        self.active_account = self.ask_choice(
+            header="Available accounts",
+            choices=self.accounts,
+            question=self.attr_helps["active_account"]
+        )
+        return None
 
-    def get_from_file(self, filename):
-        """Load config attributes from file
-
-        Parameters
-        ----------
-        filename : string
-            File path storing the config summary
+    def ask_attributes(self):
+        """Ask for attributes from command line
         """
+        self.port = self.ask_plain(
+            header=self.attr_helps["port"],
+            default=self.attr_defaults["port"],
+            dtype=self.attr_types["port"]
+        )
+        self.ssl = self.ask_plain(
+            header=self.attr_helps["ssl"],
+            default=self.attr_defaults["ssl"],
+            dtype=self.attr_types["ssl"]
+        )
+        self.timeout = self.ask_plain(
+            header=self.attr_helps["timeout"],
+            default=self.attr_defaults["timeout"],
+            dtype=self.attr_types["timeout"]
+        )
+        self.username = self.ask_plain(
+            header=self.attr_helps["username"],
+            default=self.attr_defaults["username"],
+            dtype=self.attr_types["username"]
+        )
+        self.timezone = self.ask_plain(
+            header=self.attr_helps["timezone"],
+            default=self.attr_defaults["timezone"],
+            dtype=self.attr_types["timezone"]
+        )
+        self.datetime_format = self.ask_choice(
+            header="Available datetime formats",
+            choices=self.attr_choices["datetime_format"],
+            question=self.attr_helps["datetime_format"],
+            default=self.attr_defaults["datetime_format"]
+        )
+        return None
 
+    def set_account(self):
+        """Set account attributes from defaults
+        """
+        self.environment = self.attr_defaults["environment"]
+        self.token = self.attr_defaults["token"]
+        self.active_account = self.attr_defaults["active_account"]
+        return None
+
+    def set_attributes(self):
+        """Set attribute values from defults
+        """
+        self.port = self.attr_defaults["port"]
+        self.ssl = self.attr_defaults["ssl"]
+        self.timeout = self.attr_defaults["timeout"]
+        self.username = self.attr_defaults["username"]
+        self.datetime_format = self.attr_defaults["datetime_format"]
+        return None
+
+    def get_from_file(self, file):
+        """Load config attributes from file
+        """
         # instantiate yaml object
         yaml = YAML()
         # load config file
-        with open(filename, "r") as file:
-            info = yaml.load(file)
+        summary = yaml.load(file)
         # return file content in dictionary
-        return info
+        return summary
 
-    def set_to_file(self, filename):
-        """Dump config attributes to file
-
-        Parameters
-        ----------
-        filename : string
-            File path storing the config summary
-        """
-
-        # instantiate yaml object
-        yaml = YAML()
-        # dump config summary in config file
-        with open(filename, "w") as file:
-            yaml.dump(self.info, file)
-
-    def set_info(self):
+    def set_summary(self):
         """Set config summary in dictionary
         """
-
         # define config summary dictionary
-        info = OrderedDict(zip(
+        self.summary = OrderedDict(zip(
         [
             "environment",
             "port",
             "ssl",
+            "timeout",
             "token",
             "username",
+            "timezone",
             "datetime_format",
             "accounts",
             "active_account"
@@ -290,10 +318,25 @@ class Config(object):
             self.environment,
             self.port,
             self.ssl,
+            self.timeout,
             self.token,
             self.username,
+            self.timezone,
             self.datetime_format,
             self.accounts,
             self.active_account
         ]))
-        return info
+        return None
+
+    def set_to_file(self, file):
+        """Dump config attributes to file
+
+        This method requires that 'summary' is already set.
+        """
+        if self.summary is None:
+            raise ValueError("You must define 'summary' first.")
+        # instantiate yaml object
+        yaml = YAML()
+        # dump config summary in config file
+        yaml.dump(self.summary, file)
+        return None
