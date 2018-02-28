@@ -4,6 +4,7 @@ from collections import OrderedDict
 from ruamel_yaml import YAML
 import oandapyV20
 from oandapyV20.endpoints.accounts import AccountList
+from pyCBT.constants import DATADIR
 
 class Config(object):
     """Given a OANDA token generates config summary that can be stored as a file
@@ -30,7 +31,7 @@ class Config(object):
         * active_account: currently used account.
     """
 
-    def __init__(self):
+    def __init__(self, **kwargs):
 
         self.attr_names = [
             "environment",
@@ -47,16 +48,16 @@ class Config(object):
         self.attr_defaults = OrderedDict(zip(
             self.attr_names,
             [
-                "practice",
-                443,
-                True,
-                1.0,
-                None,
-                None,
-                "UTC",
-                "RFC3339",
-                None,
-                None
+                kwargs.pop("enviroment", "practice"),
+                kwargs.pop("port", 443),
+                kwargs.pop("ssl", True),
+                kwargs.pop("timeout", 1.0),
+                kwargs.pop("token", None),
+                kwargs.pop("username", None),
+                kwargs.pop("timezone", "UTC"),
+                kwargs.pop("datetime_format", "RFC3339"),
+                kwargs.pop("accounts", None),
+                kwargs.pop("active_account", None)
             ]
         ))
         self.attr_helps = OrderedDict(zip(
@@ -117,6 +118,9 @@ class Config(object):
         self.active_account = None
 
         self.summary = None
+
+        self._filename_template = os.path.join(DATADIR, "providers/oanda/.oanda-account-{}.yml")
+        self._filename = None
 
     def update_defaults(self, **kwargs):
         """Update default attribute values to given keyword arguments
@@ -286,6 +290,12 @@ class Config(object):
         self.username = self.attr_defaults["username"]
         self.datetime_format = self.attr_defaults["datetime_format"]
         return None
+
+    def get_filename(self, account=None):
+        """Return config filename
+        """
+        self._filename = self._filename_template.format(account)
+        return self._filename
 
     def get_from_file(self, file):
         """Load config attributes from file

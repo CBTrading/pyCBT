@@ -6,7 +6,6 @@ import argparse, os, sys
 from copy import copy
 from collections import OrderedDict
 from pyCBT.data.providers.oanda import account
-from pyCBT.constants import DATADIR
 
 # define parser
 parser = argparse.ArgumentParser()
@@ -35,10 +34,8 @@ cmd_kwargs = dict((arg, val) for arg, val in cmd_kwargs.iteritems() if val is no
 # check if 'active_account' is in command line arguments
 fil_kwargs = OrderedDict()
 if cmd_kwargs.has_key("active_account"):
-    # define filename template
-    filename = os.path.join(DATADIR, "providers/oanda/.oanda-account-{}.yml")
-    # define final filename
-    filename = filename.format(cmd_kwargs.get("active_account"))
+    # define filename
+    filename = config.get_filename(cmd_kwargs.get("active_account"))
     # check if config file already exist
     if os.path.isfile(filename):
         response = "y"
@@ -66,11 +63,9 @@ print
 print "Summary config:"
 print
 config.set_to_file(sys.stdout)
+# define filename
+filename = config.get_filename(cmd_kwargs.get("active_account"))
 # save to file?
-# define filename template
-filename = os.path.join(DATADIR, "providers/oanda/.oanda-account-{}.yml")
-# define final filename
-filename = filename.format(cmd_kwargs.get("active_account"))
 # default response
 response = "n"
 print
