@@ -20,8 +20,6 @@ class Config(object):
         are:
 
         * environment: API url environment: 'practice' or 'live'.
-        * port: port number for submmitting requests.
-        * ssl: use SSL protocol or not.
         * timeout: lifetime of the pending request in seconds.
         * token: the access token given by OANDA.
         * username: the user holding the token.
@@ -35,8 +33,6 @@ class Config(object):
 
         self.attr_names = [
             "environment",
-            "port",
-            "ssl",
             "timeout",
             "token",
             "username",
@@ -49,8 +45,6 @@ class Config(object):
             self.attr_names,
             [
                 kwargs.pop("enviroment", "practice"),
-                kwargs.pop("port", 443),
-                kwargs.pop("ssl", True),
                 kwargs.pop("timeout", 1.0),
                 kwargs.pop("token", None),
                 kwargs.pop("username", None),
@@ -64,8 +58,6 @@ class Config(object):
             self.attr_names,
             [
                 "Server environment",
-                "Server port",
-                "Use SSL protocol?",
                 "Timeout of the requests in seconds",
                 "API authorization token",
                 "Username of the account owner",
@@ -79,8 +71,6 @@ class Config(object):
             self.attr_names,
             [
                 None,
-                int,
-                bool,
                 float,
                 None,
                 None,
@@ -98,8 +88,6 @@ class Config(object):
                 None,
                 None,
                 None,
-                None,
-                None,
                 ("RFC3339", "UNIX"),
                 None,
                 None
@@ -107,8 +95,6 @@ class Config(object):
         ))
 
         self.environment = None
-        self.port = None
-        self.ssl = None
         self.timeout = None
         self.token = None
         self.username = None
@@ -128,6 +114,7 @@ class Config(object):
         self.attr_defaults.update(kwargs)
         return None
 
+    # ERROR: join ask_plain and ask choices to ease the looping
     def ask_plain(self, header, default=None, dtype=None):
         """Ask for user input for a given account attribute
 
@@ -211,6 +198,7 @@ class Config(object):
         """Ask for account attributes from command line
         """
         # ask for environment or use command line provided
+        # ERROR: use a for loop to ask
         self.environment = self.ask_choice(
             header="Available environments",
             choices=self.attr_choices["environment"],
@@ -240,16 +228,6 @@ class Config(object):
     def ask_attributes(self):
         """Ask for attributes from command line
         """
-        self.port = self.ask_plain(
-            header=self.attr_helps["port"],
-            default=self.attr_defaults["port"],
-            dtype=self.attr_types["port"]
-        )
-        self.ssl = self.ask_plain(
-            header=self.attr_helps["ssl"],
-            default=self.attr_defaults["ssl"],
-            dtype=self.attr_types["ssl"]
-        )
         self.timeout = self.ask_plain(
             header=self.attr_helps["timeout"],
             default=self.attr_defaults["timeout"],
@@ -284,8 +262,6 @@ class Config(object):
     def set_attributes(self):
         """Set attribute values from defults
         """
-        self.port = self.attr_defaults["port"]
-        self.ssl = self.attr_defaults["ssl"]
         self.timeout = self.attr_defaults["timeout"]
         self.username = self.attr_defaults["username"]
         self.datetime_format = self.attr_defaults["datetime_format"]
@@ -312,30 +288,18 @@ class Config(object):
         """
         # define config summary dictionary
         self.summary = OrderedDict(zip(
-        [
-            "environment",
-            "port",
-            "ssl",
-            "timeout",
-            "token",
-            "username",
-            "timezone",
-            "datetime_format",
-            "accounts",
-            "active_account"
-        ],
-        [
-            self.environment,
-            self.port,
-            self.ssl,
-            self.timeout,
-            self.token,
-            self.username,
-            self.timezone,
-            self.datetime_format,
-            self.accounts,
-            self.active_account
-        ]))
+            self.attr_names,
+            [
+                self.environment,
+                self.timeout,
+                self.token,
+                self.username,
+                self.timezone,
+                self.datetime_format,
+                self.accounts,
+                self.active_account
+            ]
+        ))
         return None
 
     def set_to_file(self, file):
