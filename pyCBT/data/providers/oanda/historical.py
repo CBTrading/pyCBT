@@ -1,3 +1,4 @@
+import numpy as np
 import pandas as pd
 import oandapyV20
 from collections import OrderedDict
@@ -11,16 +12,6 @@ from datetime import datetime, timedelta
 from pyCBT.constants import OHLCV
 from .account import Config
 
-# ERROR: UNIX formatting not working
-# define function to parse 'RFC3339' and 'UNIX' formats
-FORMAT_DATETIME = {
-    "RFC3339": lambda dt: dt.strftime("%Y-%m-%dT%H:%M:%SZ"),
-    "UNIX": lambda dt: "{:.9f}".format((dt - datetime(1970, 1, 1)).total_seconds())
-}
-DATETIME_TO_FORMAT = {
-    "RFC3339": lambda dt_str, tz: parse(dt_str, tzinfos=[tz]),
-    "UNIX": lambda dt_str, tz: (timedelta(float(dt_str)) + datetime(1970, 1, 1)).replace(tzinfo=tz)
-}
 
 class Candles(object):
 
@@ -42,11 +33,9 @@ class Candles(object):
         self.instrument = instrument
         self.resolution = resolution
         self.timezone = timezone or self.account_summary.pop("timezone")
-        self.datetime_format = self.account_summary.pop("datetime_format")
-        self.from_date = self.datetime_to_utc(from_date)
-        self.to_date = self.datetime_to_utc(to_date)
+        self.from_date = self.timezone_to_utc(from_date)
+        self.to_date = self.timezone_to_utc(to_date)
         self.candles_params = {
-            "Accept-Datetime-Format": self.datetime_format,
             "granularity": self.resolution,
             "alignmentTimezone": self.timezone,
             "from": self.from_date,
@@ -55,7 +44,7 @@ class Candles(object):
         # generate request for candles
         self.requests = InstrumentsCandlesFactory(self.instrument, self.candles_params)
 
-    def datetime_to_utc(self, datetime_str, timezone=None):
+    def timezone_to_utc(self, datetime_str, in_fmt=None, timezone=None):
         """Turns a datetime string in a given timezone into a datetime string in UTC
 
         Given 'datetime_str' in a arbitrary format and a 'timezone', this method
@@ -65,16 +54,19 @@ class Candles(object):
         ----------
         datetime_str: str
             a string representation of a datetime.
+        in_fmt: str
+            format of the given datetime string. Valid values are:
+                * RFC3339 (default): {Y}-{m}-{d}T{H}:{M}:{S}Z
+                * UNIX: {s}.{nnnnnnnnn}
+                * None: any valid datetime string for dateutil.parser.parse
         timezone: str
             the name of a timezone (ex. EST, America/Caracas).
         """
         # parse arguments
-        if timezone is None:
-        #   timezone from object
-            _timezone = self.timezone
+        _timezone = timezone or self.timezone
         # take an arbitrary datetime string and turn it into a datetime object
         # parse datetime_str
-        dt = parse(datetime_str)
+        dt = timedelta(np.float64(dt_str)) + datetime(1970, 1, 1) if in_fmt == "UNIX" else parse(datetime_str)
         # if timezone not UTC
         if _timezone != "UTC":
         #   get timezone from database
@@ -89,7 +81,7 @@ class Candles(object):
         # convert to string of RFC3339 format and return
         return dt.strftime("%Y-%m-%dT%H:%M:%SZ")
 
-    def datetime_to_tmz(self, datetime_str, fmt=None, timezone=None):
+    def utc_to_timezone(self, datetime_str, in_fmt=None, timezone=None):
         """Turns a datetime string in UTC into a datetime string in a given timezone
 
         Given 'datetime_str' in RFC3339 format and UTC, this method
@@ -100,25 +92,27 @@ class Candles(object):
         ----------
         datetime_str: str
             a string representation of a datetime.
+        in_fmt: str
+            format of the given datetime string. Valid values are:
+                * RFC3339 (default): {Y}-{m}-{d}T{H}:{M}:{S}Z
+                * UNIX: {s}.{nnnnnnnnn}
+                * None: any valid datetime string for dateutil.parser.parse
         timezone: str
             the name of a timezone (ex. EST, America/Caracas).
         """
         # parse arguments
-        if fmt is None:
-        #   take datetime format from config file
-            _fmt = self.datetime_format
-        if timezone is None:
-        #   timezone from object
-            _timezone = self.timezone
+        _timezone = timezone or self.timezone
         # take an arbitrary datetime string and turn it into a datetime object
         # parse datetime_str
-        dt = parse(datetime_str)
+        dt = timedelta(np.float64(dt_str)) + datetime(1970, 1, 1) if in_fmt == "UNIX" else parse(datetime_str)
+        dt.replace(tzinfo=pytz.UTC)
         # if timezone not UTC
         if _timezone != "UTC":
         #   get timezone from database
             tz = pytz.timezone(_timezone)
-            dt = dt.astimezone(pytz.UTC)
-        # convert to string of ISO format and return
+        #   convert into timezone
+            dt = dt.astimezone(tz)
+        # convert to string of ISO-like format and return
         return dt.strftime("%Y-%m-%dT%H:%M:%SZ%z")
 
     def _get_response(self):
@@ -159,7 +153,7 @@ class Candles(object):
                         table["VOLUME"] += [candle[kw]]
         #           store datetime in table
                     elif kw == "time":
-                        table["DATETIME"] += [self.datetime_to_tmz(candle[kw])]
+                        table["DATETIME"] += [self.utc_to_timezone(candle[kw])]
         return table
 
     def as_dataframe(self):
