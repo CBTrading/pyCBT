@@ -1,10 +1,21 @@
+"""This module handles classes and functions for OANDA account configuration
+
+The classes and functions here are meant for configuration purposes only
+since they require user interaction through command line.
+
+For interacting directly with the OANDA API, please use the oandapyV20
+wrapper (https://github.com/hootnot/oanda-api-v20) upon which this module
+is built on.
+"""
+
 import sys, os
 
 from collections import OrderedDict
-from ruamel_yaml import YAML
+from ruamel.yaml import YAML
 import oandapyV20
-from oandapyV20.endpoints.accounts import AccountList
+from oandapyV20.endpoints.accounts import AccountList, AccountInstruments
 from pyCBT.constants import DATADIR
+
 
 class Config(object):
     """Given a OANDA token generates config summary that can be stored as a file
@@ -105,7 +116,7 @@ class Config(object):
 
         self.summary = None
 
-        self._filename_template = os.path.join(DATADIR, "providers/oanda/.oanda-account-{}.yml")
+        self._filename_template = os.path.join(DATADIR, "providers/oanda/.oanda-account{}.yml")
         self._filename = None
 
     def update_defaults(self, **kwargs):
@@ -270,16 +281,19 @@ class Config(object):
     def get_filename(self, account=None):
         """Return config filename
         """
-        self._filename = self._filename_template.format(account)
+        if account is not None:
+            self._filename = self._filename_template.format("-"+account)
+        else:
+            self._filename = self._filename_template.format("")
         return self._filename
 
-    def get_from_file(self, file):
+    def get_from_file(self, file=None):
         """Load config attributes from file
         """
         # instantiate yaml object
         yaml = YAML()
         # load config file
-        summary = yaml.load(file)
+        summary = yaml.load((file if file is not None else open(self.get_filename(), "r")))
         # return file content in dictionary
         return summary
 
@@ -290,14 +304,14 @@ class Config(object):
         self.summary = OrderedDict(zip(
             self.attr_names,
             [
-                self.environment,
-                self.timeout,
-                self.token,
-                self.username,
-                self.timezone,
-                self.datetime_format,
-                self.accounts,
-                self.active_account
+                self.environment or self.attr_defaults["environment"],
+                self.timeout or self.attr_defaults["timeout"],
+                self.token or self.attr_defaults["token"],
+                self.username or self.attr_defaults["username"],
+                self.timezone or self.attr_defaults["timezone"],
+                self.datetime_format or self.attr_defaults["datetime_format"],
+                self.accounts or self.attr_defaults["accounts"],
+                self.active_account or self.attr_defaults["active_account"]
             ]
         ))
         return None

@@ -64,13 +64,13 @@ print "Summary config:"
 print
 config.set_to_file(sys.stdout)
 # define filename
-filename = config.get_filename(cmd_kwargs.get("active_account"))
+filename = config.get_filename()
 # save to file?
 # default response
-response = "n"
+response = "Y"
 print
-response = raw_input("Save summary to '{}' [y/N]: ".format(os.path.basename(filename)))
-if response.lower().startswith("y"):
+response = raw_input("Save summary to '{}' [Y/n]: ".format(os.path.basename(filename)))
+if response.lower().startswith("y") or response == "":
     with open(filename, "w") as OUT:
         config.set_to_file(OUT)
     if args.interactive:
