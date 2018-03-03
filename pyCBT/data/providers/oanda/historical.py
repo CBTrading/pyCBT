@@ -16,7 +16,7 @@ from .account import Config
 class Candles(object):
 
     def __init__(self, account, instrument, resolution, from_date, to_date=None, timezone=None):
-
+        # ERROR: remove config object. This class is meant to be used from cbt-config.py
         # get config summary
         config = Config()
         self.account_summary = config.get_from_file(open(config.get_filename(account), "r"))
@@ -24,6 +24,7 @@ class Candles(object):
             "timeout": self.account_summary.pop("timeout")
         }
         # instantiate API client
+        # ERROR: remove client functionality and make API client input parameter
         self.api = oandapyV20.API(
             access_token=self.account_summary.pop("token"),
             environment=self.account_summary.pop("environment"),
@@ -32,8 +33,10 @@ class Candles(object):
         # define params of candles
         self.instrument = instrument
         self.resolution = resolution
+        # ERROR: this should be timezone or "UTC". Better yet, default to "UTC" in constructor
         self.timezone = timezone or self.account_summary.pop("timezone")
         self.from_date = self.timezone_to_utc(from_date)
+        # ERROR: this will break if to_date==None
         self.to_date = self.timezone_to_utc(to_date)
         self.candles_params = {
             "granularity": self.resolution,
@@ -115,6 +118,7 @@ class Candles(object):
         # convert to string of ISO-like format and return
         return dt.strftime("%Y-%m-%dT%H:%M:%SZ%z")
 
+    # ERROR: this will break if called consecutive times. Implement setter for the candles_response
     def _get_response(self):
         """Return response with list of candles
         """

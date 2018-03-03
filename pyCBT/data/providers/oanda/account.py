@@ -16,6 +16,7 @@ import oandapyV20
 from oandapyV20.endpoints.accounts import AccountList, AccountInstruments
 from pyCBT.constants import DATADIR
 
+# ERROR: implement Client class for handling the account summary from file & API client
 
 class Config(object):
     """Given a OANDA token generates config summary that can be stored as a file
