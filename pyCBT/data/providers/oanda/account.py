@@ -8,7 +8,7 @@ wrapper (https://github.com/hootnot/oanda-api-v20) upon which this module
 is built on.
 """
 
-import sys, os
+import sys, os, string
 
 from collections import OrderedDict
 from ruamel.yaml import YAML
@@ -288,6 +288,7 @@ class Config(object):
             self._filename = self._filename_template.format("")
         return self._filename
 
+    # ERROR:
     def get_from_file(self, file=None):
         """Load config attributes from file
         """
@@ -300,23 +301,29 @@ class Config(object):
 
     def set_summary(self):
         """Set config summary in dictionary
+
+        This method requires that all summary items are set. So it should be called
+        only after calling ask_/set_account & ask_/set_attributes successfully.
+        Otherwise a ValueError will be raised.
         """
         # define config summary dictionary
-        self.summary = OrderedDict(zip(
-            self.attr_names,
-            [
-                self.environment or self.attr_defaults["environment"],
-                self.timeout or self.attr_defaults["timeout"],
-                self.token or self.attr_defaults["token"],
-                self.username or self.attr_defaults["username"],
-                self.timezone or self.attr_defaults["timezone"],
-                self.datetime_format or self.attr_defaults["datetime_format"],
-                self.accounts or self.attr_defaults["accounts"],
-                self.active_account or self.attr_defaults["active_account"]
-            ]
-        ))
+        _summary = [
+            self.environment,
+            self.timeout,
+            self.token,
+            self.username,
+            self.timezone,
+            self.datetime_format,
+            self.accounts,
+            self.active_account
+        ]
+        if None in _summary:
+            missing = string.join(map(str, filter(lambda item: item is None, self.attr_names)), ", ")
+            raise ValueError("the following items from the summary are undefined: {}.".format(missing))
+        self.summary = OrderedDict(zip(self.attr_names, _summary))
         return None
 
+    # ERROR: update name to 'dump_to'
     def set_to_file(self, file):
         """Dump config attributes to file
 
