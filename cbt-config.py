@@ -44,7 +44,7 @@ if cmd_kwargs.has_key("active_account"):
             response = raw_input("Going to load config file '{}' [Y/n]: ".format(os.path.basename(filename)))
         if not response or response.lower().startswith("y"):
             with open(filename, "r") as IN:
-                fil_kwargs.update(config.get_from_file(IN))
+                fil_kwargs.update(config.get_from(IN))
 # update attribute defaults to file if available & command line argument values, in that order
 config.update_defaults(**fil_kwargs)
 config.update_defaults(**cmd_kwargs)
@@ -62,7 +62,7 @@ config.set_summary()
 print
 print "Summary config:"
 print
-config.set_to_file(sys.stdout)
+config.dump_to(sys.stdout)
 # define filename
 filename = config.get_filename()
 # save to file?
@@ -72,7 +72,7 @@ print
 response = raw_input("Save summary to '{}' [Y/n]: ".format(os.path.basename(filename)))
 if response.lower().startswith("y") or response == "":
     with open(filename, "w") as OUT:
-        config.set_to_file(OUT)
+        config.dump_to(OUT)
     if args.interactive:
         print "Config file saved."
 print

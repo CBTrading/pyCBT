@@ -106,6 +106,8 @@ class Config(object):
             ]
         ))
 
+        self.update_defaults(kwargs)
+
         self.environment = None
         self.timeout = None
         self.token = None
@@ -288,8 +290,7 @@ class Config(object):
             self._filename = self._filename_template.format("")
         return self._filename
 
-    # ERROR:
-    def get_from_file(self, file=None):
+    def get_from(self, file=None):
         """Load config attributes from file
         """
         # instantiate yaml object
@@ -323,8 +324,7 @@ class Config(object):
         self.summary = OrderedDict(zip(self.attr_names, _summary))
         return None
 
-    # ERROR: update name to 'dump_to'
-    def set_to_file(self, file):
+    def dump_to(self, file):
         """Dump config attributes to file
 
         This method requires that 'summary' is already set.
