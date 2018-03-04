@@ -74,10 +74,6 @@ class Config(object):
     #        files with different active account
     def __init__(self, **kwargs):
 
-        # checking if token present
-        if "token" not in kwargs:
-            raise ValueError("'token' is a required argument.")
-
         self.attr_names = [
             "environment",
             "timeout",
