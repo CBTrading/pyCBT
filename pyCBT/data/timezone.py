@@ -3,7 +3,7 @@ from dateutil.parser import parse
 from datetime import datetime, timedelta
 
 # ERROR: join this methods
-def tz_to_utc(datetime_str, timezone=None):
+def tz_to_utc(datetime_str=None, timezone=None):
     """Turns a datetime string in a given timezone into a datetime string in UTC
 
     Given 'datetime_str' in a arbitrary format and a 'timezone', this method
@@ -31,6 +31,7 @@ def tz_to_utc(datetime_str, timezone=None):
                 dt = timedelta(np.float64(dt_str)) + datetime(1970, 1, 1)
             except ValueError:
                 raise ValueError("Unknown datetime format for {}.".format(datetime_str))
+    if timezone is None: timezone = "UTC"
 
     if timezone != "UTC":
         tz = pytz.timezone(timezone)
@@ -38,7 +39,7 @@ def tz_to_utc(datetime_str, timezone=None):
         dt = dt.astimezone(pytz.UTC)
     return dt.strftime("%Y-%m-%dT%H:%M:%SZ")
 
-def utc_to_tz(datetime_str, in_fmt=None, timezone=None):
+def utc_to_tz(datetime_str=None, timezone=None):
     """Turns a datetime string in UTC into a datetime string in a given timezone
 
     Given 'datetime_str' in RFC3339 format and UTC, this method returns a version
@@ -65,6 +66,7 @@ def utc_to_tz(datetime_str, in_fmt=None, timezone=None):
                 dt = timedelta(np.float64(dt_str)) + datetime(1970, 1, 1)
             except ValueError:
                 raise ValueError("Unknown datetime format for {}.".format(datetime_str))
+    if timezone is None: timezone = "UTC"
 
     dt.replace(tzinfo=pytz.UTC)
     if timezone != "UTC":
