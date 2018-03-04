@@ -165,85 +165,69 @@ class Config(object):
         self.attr_defaults.update(kwargs)
         return None
 
-    # ERROR: join ask_plain and ask choices to ease the looping
-    def ask_plain(self, header, default=None, dtype=None):
-        """Ask for user input for a given account attribute
+    def ask_the_user(self, header, choices=None, question=None, default=None, dtype=None):
+        """Ask the user to set the value for given attribute from several options
 
         Parameters
         ----------
-        header : string
-            Description of the attribute.
-        default : any, optional
-            Default value for attribute.
-        dtype : type object, optional
-            Data type to cast value given by user.
-        """
-
-        print
-        # if not default value present
-        if default is None:
-        #   ask for value
-            value = raw_input("{}: ".format(header))
-        # else if default value present
-        else:
-        #   ask for value with default value
-            value = raw_input("{} [{}]: ".format(header, default))
-        #   parse value from user
-            if value == "": value = str(default)
-        # if not given data type
-        if dtype is None:
-        #   return plain string with value
-            return value
-        # else if given data type
-        else:
-        #   evaluate given string value
-            value = eval(value)
-        #   check if given value is the same type as given
-            if not type(value) == dtype:
-        #       raise error if type mismatch
-                raise TypeError("{} is not {} type".format(value, dtype))
-            return value
-
-    def ask_choice(self, header, choices, question, default=None):
-        """Ask user to choose value for given attribute from several options
-
-        Parameters
-        ----------
-        header : string
+        header: string
             Description of the choices.
-        choices : list or tuple
-            Choices for the given attribute.
-        question : string
+        choices: list or tuple
+            Choices to choose from.
+        question: string
             Ask user to choose one of the options.
-        default : any
+        default: any
             Default value for the attribute.
+        dtype: type object, optional
+            Data type to asign value given by the user.
         """
-
-        # if only one choice, make it default choice
-        if len(choices)==1: default = choices[0]
-
-        # display list of choices
-        print
-        print "{}:".format(header)
-        for i, choice in enumerate(choices):
-            print "[{}] {}".format(i+1, choice)
-        # if not default choice present
-        if default is None:
-        #   ask for choice
-            select = raw_input("{}: ".format(question))
-        # else if default choice present
-        else:
-        #   define index of default choice
-            i_default = choices.index(default) + 1
-        #   ask for choice with default value
-            select = raw_input("{}? [{}]: ".format(question, i_default))
-        #   parse choice from user
-            if select == "":
-                select = i_default - 1
+        # if not given choices, ask plain
+        if choices is None:
+            if default is None:
+            #   ask for value
+                value = raw_input("{}: ".format(header))
+            # else if default value present
             else:
-                select = int(select) - 1
-        # return selected choice
-        return choices[select]
+            #   ask for value with default value
+                value = raw_input("{} [{}]: ".format(header, default))
+            #   parse value from user
+                if value == "": value = str(default)
+            # if not given data type
+            if dtype is None:
+            #   return plain string with value
+                return value
+            # else if given data type
+            else:
+            #   evaluate given string value
+                value = eval(value)
+            #   check if given value is the same type as given
+                if not type(value) == dtype:
+            #       raise error if type mismatch
+                    raise TypeError("{} is not {} type".format(value, dtype))
+            return value
+        # else, ask choice
+        else:
+            if len(choices)==1: default = choices[0]
+            # display list of choices
+            print "{}:".format(header)
+            for i, choice in enumerate(choices):
+                print "[{}] {}".format(i+1, choice)
+            # if not default choice present
+            if default is None:
+            #   ask for choice
+                select = raw_input("{}?: ".format(question or "Your choice"))
+            # else if default choice present
+            else:
+            #   define index of default choice
+                i_default = choices.index(default) + 1
+            #   ask for choice with default value
+                select = raw_input("{}? [{}]: ".format(question or "Your choice", i_default))
+            #   parse choice from user
+                if select == "":
+                    select = i_default - 1
+                else:
+                    select = int(select) - 1
+            return choices[select]
 
     # ERROR: this method should only set the 'self.attr_defaults'
     # ERROR: join ask_account/ask_attributes methods
