@@ -80,8 +80,8 @@ if args.interactive:
 else:
     if None in config.attr_defaults.values():
         config.ask_attributes(only_missing=True)
-    config.set_attributes()
 # set summary config
+config.set_attributes()
 config.set_summary()
 
 # SAVE SUMMARY(?) ----------------------------------------------------------------------------------
