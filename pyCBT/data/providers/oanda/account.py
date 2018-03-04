@@ -172,6 +172,7 @@ class Config(object):
             Data type to asign value given by the user.
         """
         # if not given choices, ask plain
+        print
         if choices is None:
             if default is None:
             #   ask for value
@@ -224,17 +225,22 @@ class Config(object):
             if only_missing and self.attr_defaults[attr_name] is not None: continue
             if attr_name == "accounts":
                 # get accounts
-                api = oandapyV20.API(access_token=self.token, environment=self.environment)
-                # generate request to appropriate endpoint
+                api = oandapyV20.API(
+                    access_token=self.attr_defaults["token"],
+                    environment=self.attr_defaults["environment"],
+                    request_params={"timeout": self.attr_defaults["timeout"]}
+                )
+                # generate request to account list endpoint
                 r = AccountList()
                 api.request(r)
                 # store list of account IDs
-                self.accounts = [account["id"] for account in r.response["accounts"]]
+                self.attr_defaults[attr_name] = [account["id"] for account in r.response["accounts"]]
+                self.attr_choices["account"] = self.attr_defaults[attr_name]
             else:
                 self.attr_defaults[attr_name] = self.ask_the_user(
                     header=self.attr_helps[attr_name],
                     choices=self.attr_choices[attr_name],
-                    question=self.attr_choices[attr_name],
+                    question="Select the {}".format(attr_name),
                     default=self.attr_defaults[attr_name],
                     dtype=self.attr_types[attr_name]
                 )
