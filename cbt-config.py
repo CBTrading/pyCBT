@@ -81,7 +81,6 @@ else:
     if None in config.attr_defaults.values():
         config.ask_attributes(only_missing=True)
 # set summary config
-config.set_attributes()
 config.set_summary()
 
 # SAVE SUMMARY(?) ----------------------------------------------------------------------------------

@@ -246,10 +246,14 @@ class Config(object):
                 )
         return None
 
-    # ERROR: join set_attributes with set_summary
-    def set_attributes(self):
-        """Set attribute values from defults
+    def set_summary(self):
+        """Set config attributes & summary in dictionary
+
+        This method requires that all summary items are set. So it should be called
+        only after calling ask_/set_account & ask_/set_attributes successfully.
+        Otherwise a ValueError will be raised.
         """
+        # set config attributes
         self.token = self.attr_defaults["token"]
         self.environment = self.attr_defaults["environment"]
         self.timeout = self.attr_defaults["timeout"]
@@ -258,15 +262,6 @@ class Config(object):
         self.username = self.attr_defaults["username"]
         self.timezone = self.attr_defaults["timezone"]
         self.datetime_format = self.attr_defaults["datetime_format"]
-        return None
-
-    def set_summary(self):
-        """Set config summary in dictionary
-
-        This method requires that all summary items are set. So it should be called
-        only after calling ask_/set_account & ask_/set_attributes successfully.
-        Otherwise a ValueError will be raised.
-        """
         # define config summary dictionary
         _summary = [
             self.token,
