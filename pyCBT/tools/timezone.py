@@ -21,7 +21,8 @@ def timezone_shift(datetime_str=None, in_tz="America/Caracas", out_tz="UTC", fmt
         or one of the options:
             - RFC3339
             - UNIX
-        Both of this will convert to UTC regardless of 'out_tz'.
+            - JSON
+        Any the listed options will be in UTC regardless of 'out_tz'.
     """
     if datetime_str is None:
         dt = datetime.now(tzinfo=pytz.timezone(in_tz))
@@ -36,9 +37,16 @@ def timezone_shift(datetime_str=None, in_tz="America/Caracas", out_tz="UTC", fmt
 
     if dt.tzinfo is None: dt.replace(tzinfo=pytz.timezone(in_tz))
 
-    if fmt == "RFC3339": out_tz = "UTC"
+    if fmt in ["RFC3339", "UNIX", "JSON"]: out_tz = "UTC"
     if in_tz != out_tz: dt.astimezone(pytz.timezone())
 
-    dt_str = dt.strftime("%Y-%m-%dT%H:%M:%SZ" if fmt == "RFC3339" else fmt)
+    if fmt == "UNIX":
+        dt_str = "{:.9f}".format((dt - datetime(1970, 1, 1)).total_seconds())
+    elif fmt == "JSON":
+        dt_str = "{:.6f}".format((dt - datetime(1970, 1, 1)).total_seconds()*1000.0)
+    elif fmt == "RFC3339":
+        dt_str = dt.strftime("%Y-%m-%dT%H:%M:%SZ")
+    else:
+        dt_str = dt.strftime(fmt)
 
     return dt_str
