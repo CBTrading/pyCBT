@@ -35,7 +35,7 @@ def tz_to_utc(datetime_str=None, timezone=None):
 
     if timezone != "UTC":
         tz = pytz.timezone(timezone)
-        if dt.tzinfo is None dt = dt.replace(tzinfo=tz)
+        if dt.tzinfo is None: dt = dt.replace(tzinfo=tz)
         dt = dt.astimezone(pytz.UTC)
     return dt.strftime("%Y-%m-%dT%H:%M:%SZ")
 
@@ -72,4 +72,5 @@ def utc_to_tz(datetime_str=None, timezone=None):
     if timezone != "UTC":
         tz = pytz.timezone(timezone)
         dt = dt.astimezone(tz)
+    # ERROR: implement format string as decorator to ease changing to UNIX
     return dt.strftime("%Y-%m-%dT%H:%M:%SZ%z")
