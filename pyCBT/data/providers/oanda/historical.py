@@ -7,7 +7,7 @@ from oandapyV20.types import DateTime
 
 from pyCBT.constants import OHLCV
 from .account import Config
-from .timezone import tz_to_utc, utc_to_tz
+from pyCBT.tools.timezone import tz_to_utc, utc_to_tz
 
 
 class Candles(object):
