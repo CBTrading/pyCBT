@@ -5,7 +5,7 @@ since they require user interaction through command line.
 
 For interacting directly with the OANDA API, please use the oandapyV20
 wrapper (https://github.com/hootnot/oanda-api-v20) upon which this module
-is built on.
+is built.
 """
 
 import sys, os, string
@@ -16,14 +16,44 @@ import oandapyV20
 from oandapyV20.endpoints.accounts import AccountList, AccountInstruments
 from pyCBT.constants import DATADIR
 
-# ERROR: implement Client class for handling the account summary from file & API client
+
 
 class Config(object):
-    """Given a OANDA token generates config summary that can be stored as a file
+    """Given a OANDA token, generate a config summary.
 
-    Generates a config summary given a series of OANDA account attributes.
-    This summary can be stored in a file, loaded from a file or
-    generated interactively by command line interaction.
+    Essentially this class provides a badge card to access one account
+    associated with your token. This bagde card, called 'self.summary' can be
+    stored in a file, loaded from a file or generated interactively by command
+    line interaction.
+
+    The attributes can come from three sources:
+        - Default values stored in self.attr_defaults.
+        - A pre-built config file compliant with the required format (see example
+          below).
+        - Keyword arguments (kwargs) provided on initialization of the class or
+          latter on.
+
+    There are three important set of variables to the final objective of this class
+    (the 'self.summary'), namely: 'self.attr_defaults', the group of attributes
+    'self.environment', 'self.timeout', 'self.token', 'self.username',
+    'self.timezone', 'self.datetime_format', 'self.accounts' and 'self.active_account',
+    and finally, the 'self.summary' attribute itself. Each is manipulated in stages
+    under full control of the user, and ONLY when the method 'self.set_summary' is
+    called, presumably (and necessarily) when all items in 'self.attr_defaults' are
+    not 'None', 'self.summary' and the previous group of attributes are set to the
+    values in the first.
+
+    The 'self.attr_defaults' attribute holds the current defaults for the config
+    object. However, on initialization, the 'self.attr_defaults' can be updated
+    through the 'kwargs'. Later on, 'self.attr_defaults' can be (again) updated
+    through the 'self.update_defaults' method using a different set of 'kwargs'.
+    Please note that any of these sources may contain missing values. In fact,
+    by default, 'self.attr_defaults' is not aware of 'username' nor 'active_account'.
+
+    Finally, the 'self.summary' can be stored ('self.dump_to') in a file. To ensure
+    format compliance and reachability of this file through this class instances, there
+    are three helper methods: 'self.get_filename', to build a full path to the file,
+    and 'self.dump_to'/'self.get_from' methods to store/load the 'self.summary' variable.
 
     Parameters
     ----------
@@ -33,7 +63,7 @@ class Config(object):
 
         * environment: API url environment: 'practice' or 'live'.
         * timeout: lifetime of the pending request in seconds.
-        * token: the access token given by OANDA.
+        * token: the access token given by OANDA (REQUIRED PARAMETER).
         * username: the user holding the token.
         * timezone: timezone for series alignment.
         * datetime_format: format used for datetime strings: 'RFC3339' or 'UNIX'.
@@ -41,6 +71,9 @@ class Config(object):
         * active_account: currently used account.
     """
 
+    # ERROR: remove accounts. Better yet, do not as this list can be used to generate other config
+    #        files with different active account
+    # ERROR: rename 'active_account' to 'account'
     def __init__(self, **kwargs):
 
         self.attr_names = [
@@ -208,6 +241,9 @@ class Config(object):
         # return selected choice
         return choices[select]
 
+    # ERROR: this method should only set the 'self.attr_defaults'
+    # ERROR: join ask_account/ask_attributes methods
+    # ERROR: implement ask only missing values (true or false)
     def ask_account(self):
         """Ask for account attributes from command line
         """
@@ -239,6 +275,7 @@ class Config(object):
         )
         return None
 
+    # ERROR: this method should only set the 'self.attr_defaults'
     def ask_attributes(self):
         """Ask for attributes from command line
         """
