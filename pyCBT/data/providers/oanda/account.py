@@ -137,8 +137,6 @@ class Config(object):
             ]
         ))
 
-        self.update_defaults(kwargs)
-
         self.environment = None
         self.timeout = None
         self.token = None
