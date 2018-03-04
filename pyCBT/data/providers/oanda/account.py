@@ -230,13 +230,10 @@ class Config(object):
             return choices[select]
 
     # ERROR: this method should only set the 'self.attr_defaults'
-    # ERROR: join ask_account/ask_attributes methods
     # ERROR: implement ask only missing values (true or false)
-    def ask_account(self):
-        """Ask for account attributes from command line
-        """
+    # ERROR: use a for loop to ask
+    def ask_attributes(self):
         # ask for environment or use command line provided
-        # ERROR: use a for loop to ask
         self.environment = self.ask_choice(
             header="Available environments",
             choices=self.attr_choices["environment"],
@@ -261,12 +258,6 @@ class Config(object):
             choices=self.accounts,
             question=self.attr_helps["active_account"]
         )
-        return None
-
-    # ERROR: this method should only set the 'self.attr_defaults'
-    def ask_attributes(self):
-        """Ask for attributes from command line
-        """
         self.timeout = self.ask_plain(
             header=self.attr_helps["timeout"],
             default=self.attr_defaults["timeout"],
@@ -288,8 +279,8 @@ class Config(object):
             question=self.attr_helps["datetime_format"],
             default=self.attr_defaults["datetime_format"]
         )
-        return None
 
+    # ERROR: join set_account and set_attributes methods
     def set_account(self):
         """Set account attributes from defaults
         """
