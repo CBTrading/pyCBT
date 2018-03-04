@@ -278,8 +278,12 @@ class Config(object):
             self.datetime_format
         ]
         if None in _summary:
-            missing = string.join(map(str, filter(lambda item: item is None, self.attr_names)), ", ")
-            raise ValueError("the following items from the summary are undefined: {}.".format(missing))
+            missing = string.join(
+                [self.attr_names[i] for i in xrange(len(_summary)) if _summary[i] is None], ", "
+            )
+            raise ValueError(
+                "The following items from the summary are undefined: {}.".format(missing)
+            )
         self.summary = OrderedDict(zip(self.attr_names, _summary))
         return None
 
