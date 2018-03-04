@@ -5,12 +5,9 @@ from collections import OrderedDict
 from oandapyV20.contrib.factories import InstrumentsCandlesFactory
 from oandapyV20.types import DateTime
 
-import pytz
-from dateutil.parser import parse
-from datetime import datetime, timedelta
-
 from pyCBT.constants import OHLCV
 from .account import Config
+from .timezone import tz_to_utc, utc_to_tz
 
 
 class Candles(object):
@@ -35,9 +32,8 @@ class Candles(object):
         self.resolution = resolution
         # ERROR: this should be timezone or "UTC". Better yet, default to "UTC" in constructor
         self.timezone = timezone or self.account_summary.pop("timezone")
-        self.from_date = self.timezone_to_utc(from_date)
-        # ERROR: this will break if to_date==None
-        self.to_date = self.timezone_to_utc(to_date)
+        self.from_date = tz_to_utc(from_date, timezone=self.timezone)
+        self.to_date = tz_to_utc(to_date, timezone=self.timezone)
         self.candles_params = {
             "granularity": self.resolution,
             "alignmentTimezone": self.timezone,
@@ -47,76 +43,10 @@ class Candles(object):
         # generate request for candles
         self.requests = InstrumentsCandlesFactory(self.instrument, self.candles_params)
 
-    def timezone_to_utc(self, datetime_str, in_fmt=None, timezone=None):
-        """Turns a datetime string in a given timezone into a datetime string in UTC
+        # initialize response
+        self._response = None
 
-        Given 'datetime_str' in a arbitrary format and a 'timezone', this method
-        returns a version of the same datetime in the RFC3339 format.
-
-        Parameters
-        ----------
-        datetime_str: str
-            a string representation of a datetime.
-        in_fmt: str
-            format of the given datetime string. Valid values are:
-                * RFC3339 (default): {Y}-{m}-{d}T{H}:{M}:{S}Z
-                * UNIX: {s}.{nnnnnnnnn}
-                * None: any valid datetime string for dateutil.parser.parse
-        timezone: str
-            the name of a timezone (ex. EST, America/Caracas).
-        """
-        # parse arguments
-        _timezone = timezone or self.timezone
-        # take an arbitrary datetime string and turn it into a datetime object
-        # parse datetime_str
-        dt = timedelta(np.float64(dt_str)) + datetime(1970, 1, 1) if in_fmt == "UNIX" else parse(datetime_str)
-        # if timezone not UTC
-        if _timezone != "UTC":
-        #   get timezone from database
-            tz = pytz.timezone(_timezone)
-        #   check if datetime_str has timezone information
-        #   if has not:
-            if dt.tzinfo is None:
-        #       update tzinfo to tz
-                dt = dt.replace(tzinfo=tz)
-        #   because oandapyV20 uses UTC by default, convert current datetime to this system
-            dt = dt.astimezone(pytz.UTC)
-        # convert to string of RFC3339 format and return
-        return dt.strftime("%Y-%m-%dT%H:%M:%SZ")
-
-    def utc_to_timezone(self, datetime_str, in_fmt=None, timezone=None):
-        """Turns a datetime string in UTC into a datetime string in a given timezone
-
-        Given 'datetime_str' in RFC3339 format and UTC, this method
-        returns a version of the same datetime in a ISO-like format
-        (%Y-%m-%dT%H:%M:%SZ%z).
-
-        Parameters
-        ----------
-        datetime_str: str
-            a string representation of a datetime.
-        in_fmt: str
-            format of the given datetime string. Valid values are:
-                * RFC3339 (default): {Y}-{m}-{d}T{H}:{M}:{S}Z
-                * UNIX: {s}.{nnnnnnnnn}
-                * None: any valid datetime string for dateutil.parser.parse
-        timezone: str
-            the name of a timezone (ex. EST, America/Caracas).
-        """
-        # parse arguments
-        _timezone = timezone or self.timezone
-        # take an arbitrary datetime string and turn it into a datetime object
-        # parse datetime_str
-        dt = timedelta(np.float64(dt_str)) + datetime(1970, 1, 1) if in_fmt == "UNIX" else parse(datetime_str)
-        dt.replace(tzinfo=pytz.UTC)
-        # if timezone not UTC
-        if _timezone != "UTC":
-        #   get timezone from database
-            tz = pytz.timezone(_timezone)
-        #   convert into timezone
-            dt = dt.astimezone(tz)
-        # convert to string of ISO-like format and return
-        return dt.strftime("%Y-%m-%dT%H:%M:%SZ%z")
+        print self.account_summary
 
     # ERROR: this will break if called consecutive times. Implement setter for the candles_response
     def _get_response(self):
@@ -157,7 +87,7 @@ class Candles(object):
                         table["VOLUME"] += [candle[kw]]
         #           store datetime in table
                     elif kw == "time":
-                        table["DATETIME"] += [self.utc_to_timezone(candle[kw])]
+                        table["DATETIME"] += [utc_to_tz(candle[kw], timezone=self.timezone)]
         return table
 
     def as_dataframe(self):
