@@ -57,7 +57,6 @@ class Candles(object):
 
         print self.account_summary
 
-    # ERROR: this will break if called consecutive times. Implement setter for the candles_response
     def _get_response(self):
         """Return response with list of candles
         """
@@ -72,11 +71,17 @@ class Candles(object):
         # return candles
         return candles_response
 
+    def set_response(self):
+        """Set response for candles request
+        """
+        self._response = self._get_response()
+        return None
+
     def as_dictionary(self):
         """Return candles response as tabulated dictionary
         """
         # get candles response
-        candles_response = self._get_response()
+        if self._response is None: self.set_response()
         # initialize dictionary table
         table = OrderedDict(zip(["DATETIME"]+OHLCV, [[], [], [], [], [], []]))
         # for each candle in response
