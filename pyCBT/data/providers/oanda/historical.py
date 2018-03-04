@@ -33,7 +33,7 @@ class Candles(object):
         Defaults to timezone in the config file (see '.account.Config').
     """
 
-    def __init__(self, account, instrument, resolution, from_date, to_date=None, timezone=None):
+    def __init__(self, client, instrument, resolution, from_date, to_date=None, timezone=None):
         self.client = client
         self.account_summary = client.summary
         self.api = client.api
@@ -54,6 +54,10 @@ class Candles(object):
 
         # initialize response
         self._response = None
+        # initialize dictionary table
+        self._dict_table = None
+        # initialize dataframe table
+        self._dataframe_table = None
 
         print self.account_summary
 
@@ -80,12 +84,13 @@ class Candles(object):
     def as_dictionary(self):
         """Return candles response as tabulated dictionary
         """
+        if self._dict_table is not None: return self._dict_table
         # get candles response
         if self._response is None: self.set_response()
         # initialize dictionary table
         table = OrderedDict(zip(["DATETIME"]+OHLCV, [[], [], [], [], [], []]))
         # for each candle in response
-        for candle in candles_response:
+        for candle in self._response:
         #   only take completed candles
             if candle.pop("complete"):
         #       for each keyword (ex.: volume, time) in candle
@@ -105,15 +110,18 @@ class Candles(object):
         #           candles are aligned to self.timezone, but their datetime is is
         #           still in UTC, so it has to be converted to self.timezone
                         table["DATETIME"] += [timezone_shift(candle[kw], in_tz="UTC", out_tz=self.timezone)]
+        self._dict_table = table
         return table
 
     def as_dataframe(self):
         """Return candles response as Pandas DataFrame
         """
+        if self._dataframe_table is not None: return self._dataframe_table
         # get dictionary table
         d = self.as_dictionary()
         # define index
         i = d.pop("DATETIME")
         # define table
         table = pd.DataFrame(d, index=i)
+        self._dataframe_table = table
         return table
