@@ -336,14 +336,16 @@ class Client(object):
                 conf_filename = config.get_filename()
                 account_summary = config.get_from(file=open(conf_filename, "r"))
             except IOError:
-                raise ValueError("The default config file does not exist. Please run cbt-config.py.")
+                raise IOError("The default config file does not exist.\n\
+                               Please run cbt-config.py.")
         # else if account given and not try default, try account config file or die
         elif account is not None and not try_default:
             try:
                 conf_filename = config.get_filename(account)
                 account_summary = config.get_from(file=open(conf_filename, "r"))
             except IOError:
-                raise ValueError("The config file '{}' does not exist. Please run cbt-config.py.".format(conf_filename))
+                raise IOError("The config file '{}' does not exist.\n\
+                               Please run cbt-config.py.".format(conf_filename))
         # else, try both
         else:
             try:
@@ -354,10 +356,14 @@ class Client(object):
             try:
                 conf_filename = config.get_filename()
                 account_summary = config.get_from(file=open(conf_filename, "r"))
+            except IOError:
+                raise IOError("No config file associated with the given account was found.\n\
+                               Please run cbt-config.py.")
 
         if account is not None:
             if not account in account_summary.get("accounts"):
-                raise ValueError("The config file '{}' is corrupt. Please run cbt-config.py.".format(conf_filename))
+                raise ValueError("The config file '{}' is corrupt.\n\
+                                  Please run cbt-config.py.".format(conf_filename))
 
         # initialize API client
         # ERROR: the token is still visible from self.api
