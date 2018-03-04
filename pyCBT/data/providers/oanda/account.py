@@ -60,91 +60,89 @@ class Config(object):
         keyword attributes that can be passed through command line. Valid keys
         are:
 
-        * environment: API url environment: 'practice' or 'live'.
-        * timeout: lifetime of the pending request in seconds.
-        * token: the access token given by OANDA (REQUIRED PARAMETER).
-        * username: the user holding the token.
-        * timezone: timezone for series alignment.
-        * datetime_format: format used for datetime strings: 'RFC3339' or 'UNIX'.
+        * token: the access token given by OANDA.
+        * environment: API url environment: 'practice' (default) or 'live'.
+        * timeout: lifetime of the pending request in seconds (defaults to 1.0).
         * accounts: accounts registered for given a token.
         * account: currently used account.
+        * username: the user holding the token.
+        * timezone: timezone for series alignment (defaults to 'UTC').
+        * datetime_format: format used for datetime strings: 'RFC3339' (default) or 'UNIX'.
     """
 
-    # ERROR: remove accounts. Better yet, do not as this list can be used to generate other config
-    #        files with different active account
     def __init__(self, **kwargs):
 
         self.attr_names = [
+            "token",
             "environment",
             "timeout",
-            "token",
+            "accounts",
+            "account",
             "username",
             "timezone",
-            "datetime_format",
-            "accounts",
-            "account"
+            "datetime_format"
         ]
         self.attr_defaults = OrderedDict(zip(
             self.attr_names,
             [
+                kwargs.pop("token", None),
                 kwargs.pop("enviroment", "practice"),
                 kwargs.pop("timeout", 1.0),
-                kwargs.pop("token", None),
+                kwargs.pop("accounts", None),
+                kwargs.pop("account", None),
                 kwargs.pop("username", None),
                 kwargs.pop("timezone", "UTC"),
-                kwargs.pop("datetime_format", "RFC3339"),
-                kwargs.pop("accounts", None),
-                kwargs.pop("account", None)
+                kwargs.pop("datetime_format", "RFC3339")
             ]
         ))
         self.attr_helps = OrderedDict(zip(
             self.attr_names,
             [
+                "API authorization token",
                 "Server environment",
                 "Timeout of the requests in seconds",
-                "API authorization token",
+                "Accounts owned by user",
+                "Currently active account",
                 "Username of the account owner",
                 "Timezone for series alignment",
-                "Datetime format",
-                "Accounts owned by user",
-                "Currently active account"
+                "Datetime format"
             ]
         ))
         self.attr_types = OrderedDict(zip(
             self.attr_names,
             [
                 None,
+                None,
                 float,
-                None,
-                None,
-                None,
-                None,
                 list,
+                None,
+                None,
+                None,
                 None
             ]
         ))
         self.attr_choices = OrderedDict(zip(
             self.attr_names,
             [
+                None,
                 ("practice", "live"),
                 None,
                 None,
                 None,
                 None,
-                ("RFC3339", "UNIX"),
                 None,
-                None
+                ("RFC3339", "UNIX")
             ]
         ))
 
+        self.token = None
         self.environment = None
         self.timeout = None
-        self.token = None
+        self.accounts = None
+        self.account = None
         self.username = None
         self.timezone = None
         self.datetime_format = None
-        self.accounts = None
-        self.account = None
 
         self.summary = None
 
@@ -245,11 +243,13 @@ class Config(object):
     def set_attributes(self):
         """Set attribute values from defults
         """
-        self.environment = self.attr_defaults["environment"]
         self.token = self.attr_defaults["token"]
-        self.account = self.attr_defaults["account"]
+        self.environment = self.attr_defaults["environment"]
         self.timeout = self.attr_defaults["timeout"]
+        self.accounts = self.attr_defaults["accounts"]
+        self.account = self.attr_defaults["account"]
         self.username = self.attr_defaults["username"]
+        self.timezone = self.attr_defaults["timezone"]
         self.datetime_format = self.attr_defaults["datetime_format"]
         return None
 
@@ -262,14 +262,14 @@ class Config(object):
         """
         # define config summary dictionary
         _summary = [
+            self.token,
             self.environment,
             self.timeout,
-            self.token,
+            self.accounts,
+            self.account,
             self.username,
             self.timezone,
-            self.datetime_format,
-            self.accounts,
-            self.account
+            self.datetime_format
         ]
         if None in _summary:
             missing = string.join(map(str, filter(lambda item: item is None, self.attr_names)), ", ")
