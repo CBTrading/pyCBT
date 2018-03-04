@@ -229,56 +229,26 @@ class Config(object):
                     select = int(select) - 1
             return choices[select]
 
-    # ERROR: this method should only set the 'self.attr_defaults'
     # ERROR: implement ask only missing values (true or false)
-    # ERROR: use a for loop to ask
     def ask_attributes(self):
-        # ask for environment or use command line provided
-        self.environment = self.ask_choice(
-            header="Available environments",
-            choices=self.attr_choices["environment"],
-            default=self.attr_defaults["environment"],
-            question=self.attr_helps["environment"]
-        )
-        # ask for token
-        self.token = self.ask_plain(
-            header=self.attr_helps["token"],
-            default=self.attr_defaults["token"]
-        )
-        # get accounts
-        api = oandapyV20.API(access_token=self.token, environment=self.environment)
-        # generate request to appropriate endpoint
-        r = AccountList()
-        api.request(r)
-        # store list of account IDs
-        self.accounts = [account["id"] for account in r.response["accounts"]]
-        # ask for active account
-        self.active_account = self.ask_choice(
-            header="Available accounts",
-            choices=self.accounts,
-            question=self.attr_helps["active_account"]
-        )
-        self.timeout = self.ask_plain(
-            header=self.attr_helps["timeout"],
-            default=self.attr_defaults["timeout"],
-            dtype=self.attr_types["timeout"]
-        )
-        self.username = self.ask_plain(
-            header=self.attr_helps["username"],
-            default=self.attr_defaults["username"],
-            dtype=self.attr_types["username"]
-        )
-        self.timezone = self.ask_plain(
-            header=self.attr_helps["timezone"],
-            default=self.attr_defaults["timezone"],
-            dtype=self.attr_types["timezone"]
-        )
-        self.datetime_format = self.ask_choice(
-            header="Available datetime formats",
-            choices=self.attr_choices["datetime_format"],
-            question=self.attr_helps["datetime_format"],
-            default=self.attr_defaults["datetime_format"]
-        )
+        for attr_name in self.attr_names:
+            if attr_name == "accounts":
+                # get accounts
+                api = oandapyV20.API(access_token=self.token, environment=self.environment)
+                # generate request to appropriate endpoint
+                r = AccountList()
+                api.request(r)
+                # store list of account IDs
+                self.accounts = [account["id"] for account in r.response["accounts"]]
+            else:
+                self.attr_defaults[attr_name] = self.ask_the_user(
+                    header=self.attr_helps[attr_name],
+                    choices=self.attr_choices[attr_name],
+                    question=self.attr_choices[attr_name],
+                    default=self.attr_defaults[attr_name],
+                    dtype=self.attr_types[attr_name]
+                )
+        return None
 
     # ERROR: join set_account and set_attributes methods
     def set_account(self):
