@@ -7,7 +7,7 @@ from oandapyV20.types import DateTime
 
 from pyCBT.constants import OHLCV
 from .account import Config
-from pyCBT.tools.timezone import tz_to_utc, utc_to_tz
+from pyCBT.tools.timezone import timezone_shift
 
 
 class Candles(object):
@@ -41,8 +41,8 @@ class Candles(object):
         self.instrument = instrument
         self.resolution = resolution
         self.timezone = timezone or self.account_summary.pop("timezone")
-        self.from_date = tz_to_utc(from_date, timezone=self.timezone)
-        self.to_date = tz_to_utc(to_date, timezone=self.timezone)
+        self.from_date = timezone_shift(from_date, in_tz=self.timezone)
+        self.to_date = timezone_shift(to_date, in_tz=self.timezone)
         self.candles_params = {
             "granularity": self.resolution,
             "alignmentTimezone": self.timezone,
@@ -101,7 +101,10 @@ class Candles(object):
                         table["VOLUME"] += [candle[kw]]
         #           store datetime in table
                     elif kw == "time":
-                        table["DATETIME"] += [utc_to_tz(candle[kw], timezone=self.timezone)]
+        # ERROR: check this is truth:
+        #           candles are aligned to self.timezone, but their datetime is is
+        #           still in UTC, so it has to be converted to self.timezone
+                        table["DATETIME"] += [timezone_shift(candle[kw], in_tz="UTC", out_tz=self.timezone)]
         return table
 
     def as_dataframe(self):
