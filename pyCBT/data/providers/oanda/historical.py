@@ -35,7 +35,7 @@ class Candles(object):
 
     def __init__(self, client, instrument, resolution, from_date, to_date=None, timezone=None):
         self.client = client
-        self.account_summary = client.summary
+        self.account_summary = client.account_summary
         self.api = client.api
         # define params of candles
         self.instrument = instrument
