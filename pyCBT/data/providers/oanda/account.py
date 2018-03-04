@@ -17,7 +17,6 @@ from oandapyV20.endpoints.accounts import AccountList, AccountInstruments
 from pyCBT.constants import DATADIR
 
 
-
 class Config(object):
     """Given a OANDA token, generate a config summary.
 
@@ -36,7 +35,7 @@ class Config(object):
     There are three important set of variables to the final objective of this class
     (the 'self.summary'), namely: 'self.attr_defaults', the group of attributes
     'self.environment', 'self.timeout', 'self.token', 'self.username',
-    'self.timezone', 'self.datetime_format', 'self.accounts' and 'self.active_account',
+    'self.timezone', 'self.datetime_format', 'self.accounts' and 'self.account',
     and finally, the 'self.summary' attribute itself. Each is manipulated in stages
     under full control of the user, and ONLY when the method 'self.set_summary' is
     called, presumably (and necessarily) when all items in 'self.attr_defaults' are
@@ -48,7 +47,7 @@ class Config(object):
     through the 'kwargs'. Later on, 'self.attr_defaults' can be (again) updated
     through the 'self.update_defaults' method using a different set of 'kwargs'.
     Please note that any of these sources may contain missing values. In fact,
-    by default, 'self.attr_defaults' is not aware of 'username' nor 'active_account'.
+    by default, 'self.attr_defaults' is not aware of 'username' nor 'account'.
 
     Finally, the 'self.summary' can be stored ('self.dump_to') in a file. To ensure
     format compliance and reachability of this file through this class instances, there
@@ -68,12 +67,11 @@ class Config(object):
         * timezone: timezone for series alignment.
         * datetime_format: format used for datetime strings: 'RFC3339' or 'UNIX'.
         * accounts: accounts registered for given a token.
-        * active_account: currently used account.
+        * account: currently used account.
     """
 
     # ERROR: remove accounts. Better yet, do not as this list can be used to generate other config
     #        files with different active account
-    # ERROR: rename 'active_account' to 'account'
     def __init__(self, **kwargs):
 
         # checking if token present
@@ -88,7 +86,7 @@ class Config(object):
             "timezone",
             "datetime_format",
             "accounts",
-            "active_account"
+            "account"
         ]
         self.attr_defaults = OrderedDict(zip(
             self.attr_names,
@@ -100,7 +98,7 @@ class Config(object):
                 kwargs.pop("timezone", "UTC"),
                 kwargs.pop("datetime_format", "RFC3339"),
                 kwargs.pop("accounts", None),
-                kwargs.pop("active_account", None)
+                kwargs.pop("account", None)
             ]
         ))
         self.attr_helps = OrderedDict(zip(
@@ -152,7 +150,7 @@ class Config(object):
         self.timezone = None
         self.datetime_format = None
         self.accounts = None
-        self.active_account = None
+        self.account = None
 
         self.summary = None
 
@@ -229,9 +227,9 @@ class Config(object):
                     select = int(select) - 1
             return choices[select]
 
-    # ERROR: implement ask only missing values (true or false)
-    def ask_attributes(self):
+    def ask_attributes(self, only_missing=False):
         for attr_name in self.attr_names:
+            if only_missing and self.attr_defaults[attr_name] is not None: continue
             if attr_name == "accounts":
                 # get accounts
                 api = oandapyV20.API(access_token=self.token, environment=self.environment)
@@ -250,41 +248,16 @@ class Config(object):
                 )
         return None
 
-    # ERROR: join set_account and set_attributes methods
-    def set_account(self):
-        """Set account attributes from defaults
-        """
-        self.environment = self.attr_defaults["environment"]
-        self.token = self.attr_defaults["token"]
-        self.active_account = self.attr_defaults["active_account"]
-        return None
-
     def set_attributes(self):
         """Set attribute values from defults
         """
+        self.environment = self.attr_defaults["environment"]
+        self.token = self.attr_defaults["token"]
+        self.account = self.attr_defaults["account"]
         self.timeout = self.attr_defaults["timeout"]
         self.username = self.attr_defaults["username"]
         self.datetime_format = self.attr_defaults["datetime_format"]
         return None
-
-    def get_filename(self, account=None):
-        """Return config filename
-        """
-        if account is not None:
-            self._filename = self._filename_template.format("-"+account)
-        else:
-            self._filename = self._filename_template.format("")
-        return self._filename
-
-    def get_from(self, file=None):
-        """Load config attributes from file
-        """
-        # instantiate yaml object
-        yaml = YAML()
-        # load config file
-        summary = yaml.load((file if file is not None else open(self.get_filename(), "r")))
-        # return file content in dictionary
-        return summary
 
     def set_summary(self):
         """Set config summary in dictionary
@@ -302,13 +275,22 @@ class Config(object):
             self.timezone,
             self.datetime_format,
             self.accounts,
-            self.active_account
+            self.account
         ]
         if None in _summary:
             missing = string.join(map(str, filter(lambda item: item is None, self.attr_names)), ", ")
             raise ValueError("the following items from the summary are undefined: {}.".format(missing))
         self.summary = OrderedDict(zip(self.attr_names, _summary))
         return None
+
+    def get_filename(self, account=None):
+        """Return config filename
+        """
+        if account is not None:
+            self._filename = self._filename_template.format("-"+account)
+        else:
+            self._filename = self._filename_template.format("")
+        return self._filename
 
     def dump_to(self, file):
         """Dump config attributes to file
@@ -322,3 +304,14 @@ class Config(object):
         # dump config summary in config file
         yaml.dump(self.summary, file)
         return None
+
+    def get_from(self, file=None):
+        """Load config attributes from file
+        """
+        # instantiate yaml object
+        yaml = YAML()
+        # load config file
+        summary = yaml.load((file if file is not None else open(self.get_filename(), "r")))
+        # return file content in dictionary
+        return summary
+
