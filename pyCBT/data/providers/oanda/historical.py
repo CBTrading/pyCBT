@@ -11,6 +11,27 @@ from .timezone import tz_to_utc, utc_to_tz
 
 
 class Candles(object):
+    """Build candles for a given 'instrument' tradeable trough a given API 'client'
+
+    Given an API 'client', a 'instrument', a time 'resolution' and a 'from_date'
+    and 'to_date' both in 'timezone', this class build the corresponding
+    candlesticks, aligned to the same 'timezone'.
+
+    Parameters
+    ----------
+    client: a account.Client() instance
+        The API client stablishing connection to OANDA.
+    instrument: str
+        The instrument for which to get the candlesticks.
+    resolution:
+        The time resolution (granularity) of the candlesticks.
+    from_date, to_date: str
+        The datetimes range of the candlesticks. 'to_date' defaults to now in the
+        given 'timezone'.
+    timezone: str
+        The timezone of the given datetimes. Also used to align the candlesticks.
+        Defaults to timezone in the config file (see '.account.Config').
+    """
 
     def __init__(self, account, instrument, resolution, from_date, to_date=None, timezone=None):
         # ERROR: remove config object. This class is meant to be used from cbt-config.py
