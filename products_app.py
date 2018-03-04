@@ -6,18 +6,12 @@ from pyCBT.data.providers.oanda import account
 import oandapyV20
 from oandapyV20.endpoints.accounts import AccountInstruments
 
+# ERROR: implement this first block as a function and run it before app.run
 # get account summary
-config = account.Config()
-account_summary = config.get_from_file()
-# instantiate API client
-api = oandapyV20.API(
-    access_token=account_summary.pop("token"),
-    environment=account_summary.pop("environment"),
-    request_params={"timeout": account_summary.pop("timeout")}
-)
+client = account.Client()
 # get tradeable instruments & define choices list
-r = AccountInstruments(accountID=account_summary.get("active_account"))
-api.request(r)
+r = AccountInstruments(accountID=client.account_summary.get("account"))
+client.api.request(r)
 response = r.response.get("instruments")
 # restructure response & filter unwanted fields
 instruments = {"symbol": [], "name": [], "type": []}
@@ -62,7 +56,7 @@ def products():
         timezone=default_timezone
     )
     candles.as_dictionary()
-    
+
     #   show the form for updating historical parameters
 
     return render_template("products.html.j2")
