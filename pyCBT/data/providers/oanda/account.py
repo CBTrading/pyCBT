@@ -315,3 +315,65 @@ class Config(object):
         # return file content in dictionary
         return summary
 
+class Client(object):
+    """Create an API client for OANDA crendentials given a account ID.
+
+    Given a user account this class will summon an API client using the account
+    configuration from a pre-built config file associated with that account. If
+    the account is not given, the account configuration will be loaded from the
+    default (pre-built) config file. The token is kept private all along. However,
+    if the given account does not have a config file and the default is
+    successfully loaded (or_default=True), the accounts will be compared as a
+    measure of security.
+    """
+
+    def __init__(self, account=None, try_default=True):
+        # initialize config object
+        config = Config()
+        # if not account given, try default config file or die
+        if account is None:
+            try:
+                conf_filename = config.get_filename()
+                account_summary = config.get_from(file=open(conf_filename, "r"))
+            except IOError:
+                raise ValueError("The default config file does not exist. Please run cbt-config.py.")
+        # else if account given and not try default, try account config file or die
+        elif account is not None and not try_default:
+            try:
+                conf_filename = config.get_filename(account)
+                account_summary = config.get_from(file=open(conf_filename, "r"))
+            except IOError:
+                raise ValueError("The config file '{}' does not exist. Please run cbt-config.py.".format(conf_filename))
+        # else, try both
+        else:
+            try:
+                conf_filename = config.get_filename(account)
+                account_summary = config.get_from(file=open(conf_filename, "r"))
+            except IOError:
+                pass
+            try:
+                conf_filename = config.get_filename()
+                account_summary = config.get_from(file=open(conf_filename, "r"))
+
+        if account is not None:
+            if not account in account_summary.get("accounts"):
+                raise ValueError("The config file '{}' is corrupt. Please run cbt-config.py.".format(conf_filename))
+
+        # initialize API client
+        # ERROR: the token is still visible from self.api
+        self.api = oandapyV20.API(
+            access_token=account_summary.pop("token"),
+            environment=account_summary.pop("environment"),
+            request_params={"timeout": account_summary.pop("timeout")}
+        )
+        # store the rest of the account attributes
+        self.account_summary = account_summary
+
+    def reset_client(self, **kwargs):
+        self.api.close()
+        self.api = oandapyV20.API(
+            access_token=kwargs.pop("token"),
+            environment=kwargs.pop("environment"),
+            request_params={"timeout": kwargs.pop("timeout")}
+        )
+        return None
