@@ -2,7 +2,7 @@ import pytz
 from dateutil.parser import parse
 from datetime import datetime, timedelta
 
-# ERROR: implement parser as a decorator
+# ERROR: join this methods
 def tz_to_utc(datetime_str, timezone=None):
     """Turns a datetime string in a given timezone into a datetime string in UTC
 
@@ -20,12 +20,18 @@ def tz_to_utc(datetime_str, timezone=None):
     timezone: str
         the name of a timezone (ex. EST, America/Caracas).
     """
-    try:
-        dt = parse(datetime_str)
-    except ValueError:
-        dt = timedelta(np.float64(dt_str)) + datetime(1970, 1, 1)
-    finally:
-        raise ValueError("Unknown datetime format for {}".format(datetime_str))
+    # ERROR: implement parser as a decorator
+    if datetime_str is None:
+        dt = datetime.now(tzinfo=pytz.timezone(timezone))
+    else:
+        try:
+            dt = parse(datetime_str)
+        except ValueError:
+            try:
+                dt = timedelta(np.float64(dt_str)) + datetime(1970, 1, 1)
+            except ValueError:
+                raise ValueError("Unknown datetime format for {}.".format(datetime_str))
+
     if timezone != "UTC":
         tz = pytz.timezone(timezone)
         if dt.tzinfo is None dt = dt.replace(tzinfo=tz)
@@ -48,12 +54,18 @@ def utc_to_tz(datetime_str, in_fmt=None, timezone=None):
     timezone: str
         the name of a timezone (ex. EST, America/Caracas).
     """
-    try:
-        dt = parse(datetime_str)
-    except ValueError:
-        dt = timedelta(np.float64(dt_str)) + datetime(1970, 1, 1)
-    finally:
-        raise ValueError("Unknown datetime format for {}".format(datetime_str))
+    # ERROR: implement parser as a decorator
+    if datetime_str is None:
+        dt = datetime.now(tzinfo=pytz.timezone(timezone))
+    else:
+        try:
+            dt = parse(datetime_str)
+        except ValueError:
+            try:
+                dt = timedelta(np.float64(dt_str)) + datetime(1970, 1, 1)
+            except ValueError:
+                raise ValueError("Unknown datetime format for {}.".format(datetime_str))
+
     dt.replace(tzinfo=pytz.UTC)
     if timezone != "UTC":
         tz = pytz.timezone(timezone)
