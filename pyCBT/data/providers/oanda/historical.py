@@ -105,13 +105,13 @@ class Candles(object):
                 for kw in candle:
         #           store prices in table
                     if kw in ["bid", "ask", "mid"]:
-                        table["OPEN"] += [candle[kw]["o"]]
-                        table["HIGH"] += [candle[kw]["h"]]
-                        table["LOW"] += [candle[kw]["l"]]
-                        table["CLOSE"] += [candle[kw]["c"]]
+                        table["OPEN"] += [float(candle[kw]["o"])]
+                        table["HIGH"] += [float(candle[kw]["h"])]
+                        table["LOW"] += [float(candle[kw]["l"])]
+                        table["CLOSE"] += [float(candle[kw]["c"])]
         #           store volume in table
                     elif kw == "volume":
-                        table["VOLUME"] += [candle[kw]]
+                        table["VOLUME"] += [float(candle[kw])]
         #           store datetime in table
                     elif kw == "time":
         # ERROR: check this is truth:
