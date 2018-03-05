@@ -6,20 +6,8 @@ import argparse, os, sys
 from copy import copy
 from collections import OrderedDict
 from pyCBT.data.providers.oanda import account
+from pyCBT.tools.files import exist
 
-# DEFINE USEFUL FUNCTIONS --------------------------------------------------------------------------
-def exist(filename):
-    """Check if a given file path exist
-
-    Returns
-    -------
-        True if filename exist, False if do not.
-    """
-    try:
-        with open(filename, "r") as _file: pass
-        return True
-    except IOError:
-        return False
 
 # INITIALIZE VARIABLES -----------------------------------------------------------------------------
 # initialize comand line & file summary variables
