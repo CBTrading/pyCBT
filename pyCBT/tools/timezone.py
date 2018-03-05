@@ -41,9 +41,9 @@ def timezone_shift(datetime_str=None, in_tz="America/Caracas", out_tz="UTC", fmt
     if in_tz != out_tz: dt.astimezone(pytz.timezone(out_tz))
 
     if fmt == "UNIX":
-        dt_str = "{:.9f}".format((dt - datetime(1970, 1, 1)).total_seconds())
+        dt_str = round((dt - datetime(1970, 1, 1, tzinfo=pytz.UTC)).total_seconds(), 9)
     elif fmt == "JSON":
-        dt_str = "{:.6f}".format((dt - datetime(1970, 1, 1)).total_seconds()*1000.0)
+        dt_str = round((dt - datetime(1970, 1, 1, tzinfo=pytz.UTC)).total_seconds()*1000.0, 6)
     elif fmt == "RFC3339":
         dt_str = dt.strftime("%Y-%m-%dT%H:%M:%SZ")
     else:
