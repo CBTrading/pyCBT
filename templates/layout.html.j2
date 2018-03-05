@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>{% block title %}|{% endblock %}CBT</title>
+
+    <link
+      rel="stylesheet"
+      type="text/css"
+      href="{{url_for('static', filename='css/styles.css')}}"/>
+    {% block highcharts %}{% endblock %}
+  </head>
+  <body>
+    <div id="header">
+      {% block header %}{% endblock %}
+    </div>
+    <div id="content">
+      {% block content %}{% endblock %}
+    </div>
+    <div id="footer">
+      {% block footer %}
+        &copy; Copyright 2018 by <a href="#">you</a>.
+      {% endblock %}
+    </div>
+    <script type="text/javascript">
+      {% block js %}{% endblock %}
+    </script>
+  </body>
+</html>
