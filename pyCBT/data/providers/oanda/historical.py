@@ -28,12 +28,19 @@ class Candles(object):
     from_date, to_date: str
         The datetimes range of the candlesticks. 'to_date' defaults to now in the
         given 'timezone'.
+    datetime_fmt: str
+        The format of the candlesticks datetime. Available options are:
+            - RFC3339
+            - UNIX
+            - JSON
+            - any datetime format string supported by datetime.strftime.
+        Defaults to value in config file.
     timezone: str
         The timezone of the given datetimes. Also used to align the candlesticks.
         Defaults to timezone in the config file (see '.account.Config').
     """
 
-    def __init__(self, client, instrument, resolution, from_date, to_date=None, timezone=None):
+    def __init__(self, client, instrument, resolution, from_date, to_date=None, datetime_fmt=None, timezone=None):
         self.client = client
         self.account_summary = client.account_summary
         self.api = client.api
@@ -43,6 +50,7 @@ class Candles(object):
         self.timezone = timezone or self.account_summary.pop("timezone")
         self.from_date = timezone_shift(from_date, in_tz=self.timezone)
         self.to_date = timezone_shift(to_date, in_tz=self.timezone)
+        self.datetime_fmt = datetime_fmt or self.account_summary.pop("datetime_format")
         self.candles_params = {
             "granularity": self.resolution,
             "alignmentTimezone": self.timezone,
@@ -109,7 +117,12 @@ class Candles(object):
         # ERROR: check this is truth:
         #           candles are aligned to self.timezone, but their datetime is is
         #           still in UTC, so it has to be converted to self.timezone
-                        table["DATETIME"] += [timezone_shift(candle[kw], in_tz="UTC", out_tz=self.timezone)]
+                        table["DATETIME"] += [timezone_shift(
+                            datetime_str=candle[kw],
+                            in_tz="UTC",
+                            out_tz=self.timezone,
+                            fmt=self.datetime_fmt
+                        )]
         self._dict_table = table
         return table
 
