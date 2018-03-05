@@ -67,8 +67,6 @@ class Candles(object):
         # initialize dataframe table
         self._dataframe_table = None
 
-        print self.account_summary
-
     def _get_response(self):
         """Return response with list of candles
         """
