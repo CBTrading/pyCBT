@@ -15,7 +15,7 @@ class Candles(object):
 
     Given an API 'client', a 'instrument', a time 'resolution' and a 'from_date'
     and 'to_date' both in 'timezone', this class build the corresponding
-    candlesticks, aligned to the same 'timezone'.
+    candlesticks, aligned to the same 'timezone' and datetimes in 'datetime_fmt'.
 
     Parameters
     ----------
@@ -39,7 +39,7 @@ class Candles(object):
         The timezone of the given datetimes. Also used to align the candlesticks.
         Defaults to timezone in the config file (see '.account.Config').
     """
-
+    # TODO: Once I know what the heck is alignmentTimezone, implement option to do it or not
     def __init__(self, client, instrument, resolution, from_date, to_date=None, datetime_fmt=None, timezone=None):
         self.client = client
         self.account_summary = client.account_summary
@@ -112,7 +112,7 @@ class Candles(object):
                         table["VOLUME"] += [float(candle[kw])]
         #           store datetime in table
                     elif kw == "time":
-        # ERROR: check this is truth:
+        # TODO: check this is truth:
         #           candles are aligned to self.timezone, but their datetime is is
         #           still in UTC, so it has to be converted to self.timezone
                         table["DATETIME"] += [timezone_shift(
@@ -133,6 +133,6 @@ class Candles(object):
         # define index
         i = d.pop("DATETIME")
         # define table
-        table = pd.DataFrame(d, index=i)
+        table = pd.DataFrame(d, index=pd.Series(name="DATETIME", data=i))
         self._dataframe_table = table
         return table
