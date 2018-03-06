@@ -155,6 +155,7 @@ class Config(object):
         self.attr_defaults.update(kwargs)
         return None
 
+    # TODO: move this function to tools package
     def ask_the_user(self, header, choices=None, question=None, default=None, dtype=None):
         """Ask the user to set the value for given attribute from several options
 
@@ -370,7 +371,7 @@ class Client(object):
                 )
 
         # initialize API client
-        # ERROR: the token is still visible from self.api
+        # TODO: the token is still visible from self.api
         self.api = oandapyV20.API(
             access_token=account_summary.pop("token"),
             environment=account_summary.pop("environment"),
