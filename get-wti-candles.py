@@ -43,7 +43,8 @@ def parse_args():
     )
     parser.add_argument(
         "--save-to", "-s",
-        help="Stores the dataset in the given filename. Supported extensions are .csv (default if extension is missing) or .xlsx file. If .xlsx and a second argument (comma-separated) value is given, it is taken to be the name of the sheet."
+        help="Stores the dataset in the given filename. Supported extensions are .csv (default if extension is missing) or .xlsx file. If .xlsx and a second argument (comma-separated) value is given, it is taken to be the name of the sheet.",
+        action=SplitAction
     )
     # ERROR: add interactive option
 
@@ -62,6 +63,7 @@ def request_data(*args, **kwargs):
         resolution=kwargs.get("resolution"),
         from_date=kwargs.get("from_date"),
         to_date=kwargs.get("to_date"),
+        # ERROR: this is not working
         datetime_fmt=kwargs.get("datetime_format"),
         timezone=kwargs.get("timezone")
     )
@@ -74,7 +76,6 @@ def dump_data(*args, **kwargs):
     from openpyxl import load_workbook
 
     dataframe, = args
-    kwargs
     if kwargs.get("save_to") is not None:
         filename = kwargs.get("save_to")[0]
         if len(kwargs.get("save_to")) > 1: sheetname = kwargs.get("save_to")[1]
