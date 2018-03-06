@@ -25,7 +25,7 @@ def timezone_shift(datetime_str=None, in_tz="America/Caracas", out_tz="UTC", fmt
         Any the listed options will be in UTC regardless of 'out_tz'.
     """
     if datetime_str is None:
-        dt = datetime.now(tzinfo=pytz.timezone(in_tz))
+        dt = datetime.now(tz=pytz.timezone(in_tz))
     else:
         try:
             dt = parse(datetime_str)
