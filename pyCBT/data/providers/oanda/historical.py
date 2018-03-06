@@ -39,7 +39,13 @@ class Candles(object):
         The timezone of the given datetimes. Also used to align the candlesticks.
         Defaults to timezone in the config file (see '.account.Config').
     """
-    # TODO: Once I know what the heck is alignmentTimezone, implement option to do it or not
+    # TODO: implement option for storing incomplete candle (if incomplete also return array mask 'complete')
+    # TODO: once I know what the heck is alignmentTimezone, implement option to do it or not
+    # TODO: alignmentTimezone is the shifting of the candles to the closing time at the given location
+    #       Example: if alignmentTimezone=America/New York then the candles are aligned to 17:00 New York time.
+    #       even though the candles can be shifted in time (i.e. without changing the prices) to a different
+    #       timezone. In the example above, if the candles are shifted to America/Caracas, the time would be
+    #       18:00 instead.
     def __init__(self, client, instrument, resolution, from_date, to_date=None, datetime_fmt=None, timezone=None):
         self.client = client
         self.account_summary = client.account_summary
@@ -53,7 +59,7 @@ class Candles(object):
         self.datetime_fmt = datetime_fmt or self.account_summary.pop("datetime_format")
         self.candles_params = {
             "granularity": self.resolution,
-            "alignmentTimezone": self.timezone,
+            # "alignmentTimezone": self.timezone,
             "from": self.from_date,
             "to": self.to_date
         }
@@ -112,9 +118,6 @@ class Candles(object):
                         table["VOLUME"] += [float(candle[kw])]
         #           store datetime in table
                     elif kw == "time":
-        # TODO: check this is truth:
-        #           candles are aligned to self.timezone, but their datetime is is
-        #           still in UTC, so it has to be converted to self.timezone
                         table["DATETIME"] += [timezone_shift(
                             datetime_str=candle[kw],
                             in_tz="UTC",
