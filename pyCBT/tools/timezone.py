@@ -1,4 +1,5 @@
 import pytz
+import numpy as np
 from dateutil.parser import parse
 from datetime import datetime, timedelta
 
@@ -24,6 +25,8 @@ def timezone_shift(datetime_str=None, in_tz="America/Caracas", out_tz="UTC", fmt
             - JSON
         Any the listed options will be in UTC regardless of 'out_tz'.
     """
+    # TODO: implement parser as a decorator
+    # TODO: implement checking if datetime_str is JSON or UNIX
     if datetime_str is None:
         dt = datetime.now(tz=pytz.timezone(in_tz))
     else:
@@ -31,7 +34,7 @@ def timezone_shift(datetime_str=None, in_tz="America/Caracas", out_tz="UTC", fmt
             dt = parse(datetime_str)
         except ValueError:
             try:
-                dt = timedelta(np.float64(dt_str)) + datetime(1970, 1, 1)
+                dt = timedelta(np.float64(datetime_str)) + datetime(1970, 1, 1)
             except ValueError:
                 raise ValueError("Unknown datetime format for {}.".format(datetime_str))
 
@@ -47,6 +50,7 @@ def timezone_shift(datetime_str=None, in_tz="America/Caracas", out_tz="UTC", fmt
     elif fmt == "RFC3339":
         dt_str = dt.strftime("%Y-%m-%dT%H:%M:%SZ")
     else:
+    # TODO: if invalid format, use ISO
         dt_str = dt.strftime(fmt)
 
     return dt_str
