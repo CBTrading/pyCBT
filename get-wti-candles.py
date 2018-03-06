@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 def parse_args():
-    import argparse, sys
+    import argparse, sys, pytz
     from datetime import datetime
 
     class SplitAction(argparse.Action):
@@ -25,17 +25,17 @@ def parse_args():
     )
     parser.add_argument(
         "from_date",
-        metavar="from-date",
+        metavar="from-datetime",
         help="Starting datetime in dataset"
     )
     parser.add_argument(
         "to_date",
-        metavar="to-date",
+        metavar="to-datetime",
         help="Closing datetime in dataset. Defaults to now in the given timezone"
     )
     parser.add_argument(
         "timezone",
-        help="Timezone of 'from_date' alignment for the dataset",
+        help="Timezone of 'from-datetime' & 'to-datetime' also alignment for the dataset",
     )
     parser.add_argument(
         "datetime_format",
@@ -47,9 +47,15 @@ def parse_args():
         help="Stores the dataset in the given filename. Supported extensions are .csv (default if extension is missing) or .xlsx file. If .xlsx and a second argument (comma-separated) value is given, it is taken to be the name of the sheet.",
         action=SplitAction
     )
-    # ERROR: add interactive option
+    # TODO: add interactive option
+    # TODO: add verbose option
 
+    # TODO: fix help string in save-to argument
+    # TODO: fix help string in to-date
     args = parser.parse_args()
+
+    if args.to_date.lower() == "now":
+        args.to_date = datetime.now(tz=pytz.timezone(args.timezone)).isoformat()
 
     return args._get_args(), dict(args._get_kwargs())
 
@@ -64,7 +70,6 @@ def request_data(*args, **kwargs):
         resolution=kwargs.get("resolution"),
         from_date=kwargs.get("from_date"),
         to_date=kwargs.get("to_date"),
-        # ERROR: this is not working
         datetime_fmt=kwargs.get("datetime_format"),
         timezone=kwargs.get("timezone")
     )
@@ -82,7 +87,7 @@ def dump_data(*args, **kwargs):
         if len(kwargs.get("save_to")) > 1: sheetname = kwargs.get("save_to")[1]
         else: sheetname = "sheet_001"
         if filename.endswith(".xlsx") and exist(filename):
-            # ERROR: if the file exist, ask the user
+            # TODO: if the file exist, ask the user
             book = load_workbook(filename)
             with pd.ExcelWriter(filename, engine="openpyxl") as excel_writer:
                 excel_writer.book = book
@@ -102,7 +107,7 @@ def dump_data(*args, **kwargs):
                 excel_writer.save()
             book.close()
         else:
-            # ERROR: if the file exist, ask the user
+            # TODO: if the file exist, ask the user
             df = dataframe.reset_index()
             df.to_csv(filename, index=False, line_terminator=os.linesep)
 
