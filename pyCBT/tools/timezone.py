@@ -39,9 +39,8 @@ def timezone_shift(datetime_str=None, in_tz="America/Caracas", out_tz="UTC", fmt
                 raise ValueError("Unknown datetime format for {}.".format(datetime_str))
 
     if dt.tzinfo is None: dt = dt.replace(tzinfo=pytz.timezone(in_tz))
-
     if fmt in ["RFC3339", "UNIX", "JSON"]: out_tz = "UTC"
-    if in_tz != out_tz: dt.astimezone(pytz.timezone(out_tz))
+    if in_tz != out_tz: dt = dt.astimezone(pytz.timezone(out_tz))
 
     if fmt == "UNIX":
         dt_str = round((dt - datetime(1970, 1, 1, tzinfo=pytz.UTC)).total_seconds(), 9)
