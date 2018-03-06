@@ -24,21 +24,22 @@ def parse_args():
         default="M15"
     )
     parser.add_argument(
-        "from-date",
-        help="Starting datetime in dataset",
+        "from_date",
+        metavar="from-date",
+        help="Starting datetime in dataset"
     )
     parser.add_argument(
-        "to-date",
-        help="Closing datetime in dataset",
-        default="Now in the given timezone",
+        "to_date",
+        metavar="to-date",
+        help="Closing datetime in dataset. Defaults to now in the given timezone"
     )
     parser.add_argument(
         "timezone",
         help="Timezone of 'from_date' alignment for the dataset",
-        default="UTC"
     )
     parser.add_argument(
-        "datetime-format",
+        "datetime_format",
+        metavar="datetime-format",
         help="The datetime format of the dataset, example: RFC3339, UNIX, JSON, or any datetime format string.",
     )
     parser.add_argument(
