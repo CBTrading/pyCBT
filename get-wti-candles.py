@@ -28,7 +28,7 @@ def parse_args():
     parser.add_argument(
         "datetime_format",
         metavar="datetime-format",
-        help="The datetime format of the dataset, example: RFC3339, UNIX, JSON, or any datetime format string.",
+        help="The datetime format of the dataset, example: RFC3339, UNIX, JSON, or any datetime format string like %Y-%m-%dT%H:%M:%SZ%z.",
     )
     parser.add_argument(
         "--save-to", "-s",
@@ -94,8 +94,10 @@ def dump_data(*args, **kwargs):
         else:
             # TODO: if the file exist, ask the user
             if filename.split(".")[-1] != "csv": filename += ".csv"
-            df = dataframe.reset_index()
-            df.to_csv(filename, index=False, line_terminator=os.linesep)
+            dataframe.reset_index().to_csv(filename, index=False, line_terminator=os.linesep)
+
+    else:
+        dataframe.reset_index().to_csv(sys.stdout, index=False, line_terminator=os.linesep)
 
     return None
 
