@@ -14,7 +14,7 @@ def parse_args():
             current_arg_vals = getattr(namespace, self.dest, []) or []
             setattr(namespace, self.dest, current_arg_vals)
             arg_vals = getattr(namespace, self.dest)
-            arg_vals.append(values.split(","))
+            arg_vals += values[0].split(",")
 
     parser = argparse.ArgumentParser()
 
