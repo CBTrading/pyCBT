@@ -93,6 +93,7 @@ def dump_data(*args, **kwargs):
                 excel_writer.save()
         else:
             # TODO: if the file exist, ask the user
+            if filename.split(".")[-1] != "csv": filename += ".csv"
             df = dataframe.reset_index()
             df.to_csv(filename, index=False, line_terminator=os.linesep)
 
