@@ -97,21 +97,6 @@ def dump_data(*args, **kwargs):
             df = dataframe.reset_index()
             df.to_csv(filename, index=False, line_terminator=os.linesep)
 
-    ks = kwargs.keys()
-    vs = kwargs.values()
-    fmt_ln = [str(max(len(ks[i]),len(repr(vs[i])))) for i in xrange(len(ks))]
-    fmt_st = string.join(["{%d:>%s}" % (i, fmt_ln[i]) for i in xrange(len(ks))], " ")
-
-    print
-    print "DATASET"
-    print "-------"
-    print >> sys.stdout, dataframe
-    print
-    print "COMAND LINE ARGUMENTS"
-    print "---------------------"
-    print fmt_st.format(*[ks[i] for i in xrange(len(ks))])
-    print >> sys.stdout, fmt_st.format(*[vs[i] for i in xrange(len(vs))])
-    print
     return None
 
 if __name__ == "__main__":
