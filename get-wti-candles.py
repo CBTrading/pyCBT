@@ -9,7 +9,7 @@ def parse_args():
     parser.add_argument(
         "resolution",
         help="Datetime resolution (example: M15, H1)",
-        default="M15"
+        choices="S5 S10 S15 S30 M1 M2 M4 M5 M10 M15 M30 H1 H2 H3 H4 H6 H8 H12 D W M".split()
     )
     parser.add_argument(
         "from_date",
