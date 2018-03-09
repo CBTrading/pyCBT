@@ -162,5 +162,4 @@ def dump_data(*args, **kwargs):
 if __name__ == "__main__":
     args, kwargs = parse_args()
     table = request_data(*args, **kwargs)
-    print table
-    # dump_data(table, **kwargs)
+    dump_data(table, **kwargs)
