@@ -19,7 +19,6 @@ class inventory_table_has_changed_from(object):
 
     def __call__(self, browser):
         new_table = browser.find_element(*self.locator)
-        print new_table.find_element_by_css_selector("tbody tr:last-child td").text
         new_length = len(new_table.find_elements_by_css_selector("tbody tr"))
         if self.current_length < new_length:
             return new_table
@@ -92,15 +91,14 @@ def request_data(*args, **kwargs):
     wait = WebDriverWait(browser, 10)
     while parse(last_record_date.text) > from_date:
         show_more = wait.until(EC.element_to_be_clickable((By.ID, "showMoreHistory75")))
-        # show_more.click()
-        browser.execute_script("console.log(arguments);arguments[0].click();", show_more)
+        show_more.click()
     #   wait until current table is updated
         inv_table = wait.until(inventory_table_has_changed_from((By.ID, "eventHistoryTable75"), inv_table))
     #   update oldest date
         last_record_date = inv_table.find_element_by_css_selector("tbody tr:last-child td")
 
     # using pandas parse table #eventHistoryTable75
-    table = pd.read_html(u"<table>"+inv_table.get_attribute("innerHTML")+u"</table>")
+    table = pd.read_html(u"<table>"+inv_table.get_attribute("innerHTML")+u"</table>")[0]
     # process table as needed (e.g. timezone, date formatting, etc.)
     locale.resetlocale(locale.LC_TIME)
     return table
