@@ -72,34 +72,38 @@ def request_data(*args, **kwargs):
     from selenium.webdriver.common.by import By
     from selenium.webdriver.support.ui import WebDriverWait
     from selenium.webdriver.support import expected_conditions as EC
+    from pyCBT.tools.timezone import timezone_shift
 
     # process arguments (get from-date and to-date in %b %d, %Y)
     locale.setlocale(locale.LC_TIME, "en_US")
     from_date = parse(kwargs.get("from_date"))
     to_date = parse(kwargs.get("to_date"))
 
-    # connect to investing.com
     browser = webdriver.Chrome()
     browser.get("https://www.investing.com/economic-calendar/eia-crude-oil-inventories-75")
-    # wait for #showMoreHistory75 button and click it
-    # show_more = browser.find_element(By.ID, "showMoreHistory75")
-    # get current #eventHistoryTable75
     inv_table = browser.find_element(By.ID, "eventHistoryTable75")
-    # get oldest date on table
     last_record_date = inv_table.find_element_by_css_selector("tbody tr:last-child td")
-    # while oldest date is newer than from-date:
     wait = WebDriverWait(browser, 10)
     while parse(last_record_date.text) > from_date:
         show_more = wait.until(EC.element_to_be_clickable((By.ID, "showMoreHistory75")))
         show_more.click()
-    #   wait until current table is updated
         inv_table = wait.until(inventory_table_has_changed_from((By.ID, "eventHistoryTable75"), inv_table))
-    #   update oldest date
         last_record_date = inv_table.find_element_by_css_selector("tbody tr:last-child td")
 
-    # using pandas parse table #eventHistoryTable75
     table = pd.read_html(u"<table>"+inv_table.get_attribute("innerHTML")+u"</table>")[0]
     # process table as needed (e.g. timezone, date formatting, etc.)
+    table.insert(0, "Datetime", value=table["Release Date"]+" "+table["Time"])
+    table["Datetime"] = map(lambda dt: timezone_shift(
+            datetime_str=dt,
+            in_tz="America/New_York",
+            out_tz=kwargs.get("timezone"),
+            fmt=kwargs.get("datetime_format")
+        ),
+        table["Datetime"]
+    )
+    table.drop(["Release Date", "Time", "Unnamed: 5"], axis="columns", inplace=True)
+    table.set_index("Datetime", inplace=True)
+
     locale.resetlocale(locale.LC_TIME)
     return table
 
