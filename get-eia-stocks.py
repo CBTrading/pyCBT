@@ -74,7 +74,6 @@ def request_data(*args, **kwargs):
     from selenium.webdriver.support import expected_conditions as EC
     from pyCBT.tools.timezone import timezone_shift
 
-    # process arguments (get from-date and to-date in %b %d, %Y)
     locale.setlocale(locale.LC_TIME, "en_US")
     from_date = parse(kwargs.get("from_date"))
     to_date = parse(kwargs.get("to_date"))
@@ -91,7 +90,6 @@ def request_data(*args, **kwargs):
         last_record_date = inv_table.find_element_by_css_selector("tbody tr:last-child td")
 
     table = pd.read_html(u"<table>"+inv_table.get_attribute("innerHTML")+u"</table>")[0]
-    # process table as needed (e.g. timezone, date formatting, etc.)
     table.insert(0, "Datetime", value=table["Release Date"]+" "+table["Time"])
     table["Datetime"] = map(lambda dt: timezone_shift(
             datetime_str=dt,
@@ -101,6 +99,8 @@ def request_data(*args, **kwargs):
         ),
         table["Datetime"]
     )
+    mask = [not (from_date <= parse(release_date) <= to_date) for release_date in table["Release Date"]]
+    table.drop(table.index[mask], axis="index", inplace=True)
     table.drop(["Release Date", "Time", "Unnamed: 5"], axis="columns", inplace=True)
     table.set_index("Datetime", inplace=True)
 
