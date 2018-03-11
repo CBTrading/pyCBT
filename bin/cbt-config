@@ -5,8 +5,8 @@
 import argparse, os, sys
 from copy import copy
 from collections import OrderedDict
-from pyCBT.data.providers.oanda import account
-from pyCBT.tools.files import exist
+from pyCBT.providers.oanda import account
+from pyCBT.common.path import exist
 
 
 # INITIALIZE VARIABLES -----------------------------------------------------------------------------
