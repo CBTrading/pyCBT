@@ -23,13 +23,6 @@ setup(
     license="MIT",
     packages=["pyCBT"],
     install_requires=[
-        "micropython-collections == 0.1.2",
-        "micropython-collections.defaultdict == 0.3",
-        "micropython-collections.deque == 0.1.3",
-        "micropython-string == 0.1.1",
-        "micropython-urllib == 0.0.0",
-        "micropython-urllib.parse == 0.5.2",
-        "micropython-urllib.urequest == 0.6",
         "numpy == 1.14.1",
         "oandapyV20 == 0.5.0",
         "pandas == 0.22.0",
