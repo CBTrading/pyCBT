@@ -156,7 +156,7 @@ class Config(object):
         self.attr_defaults.update(kwargs)
         return None
 
-    # TODO: move this function to tools package
+    # TODO: move this function to common package
     def ask_the_user(self, header, choices=None, question=None, default=None, dtype=None):
         """Ask the user to set the value for given attribute from several options
 

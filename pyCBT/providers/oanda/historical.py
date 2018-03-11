@@ -7,7 +7,7 @@ from oandapyV20.types import DateTime
 
 from pyCBT import candles_header
 from .account import Config
-from pyCBT.tools.timezone import timezone_shift
+from pyCBT.common.timezone import timezone_shift
 
 
 class Candles(object):
