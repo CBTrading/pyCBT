@@ -11,6 +11,6 @@ STOCKS_SERIES_ID = "PET.WCRSTUS1.W"
 
 # EIA DATA PATH
 import os
-from pyCBT.constants import DATADIR
+from pyCBT import data_path
 
-DATADIR_EIA = os.path.join(DATADIR, "providers/eia")
+data_path_EIA = os.path.join(data_path, "providers/eia")

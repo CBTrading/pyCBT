@@ -2,9 +2,13 @@ import urllib, json
 import pandas as pd
 
 from collections import OrderedDict
-from ._constants import URL_EIA, KEY_EIA, DATADIR_EIA
-from ._constants import IMPORT_SERIES_ID, EXPORT_SERIES_ID, PRODUCTION_SERIES_ID, STOCKS_SERIES_ID
+from . import URL_EIA, KEY_EIA, data_path_EIA
+from . import IMPORT_SERIES_ID, EXPORT_SERIES_ID, PRODUCTION_SERIES_ID, STOCKS_SERIES_ID
 
+
+# TODO: remove EIA API key from code files
+# TODO: implement function to load EIA key from hidden config file (.eia-account.yml)
+# TODO: this class should only get and manipulate the data series from EIA
 class EIASeries():
     def __init__(self,
                  series_ids=(IMPORT_SERIES_ID,
@@ -19,7 +23,7 @@ class EIASeries():
                                    "exports_mbbl-day.csv",
                                    "production_mbbl.csv",
                                    "stocks_mbbl.csv"),
-                 url=URL_EIA, api_key=KEY_EIA, data_path=DATADIR_EIA):
+                 url=URL_EIA, api_key=KEY_EIA, data_path=data_path_EIA):
         """EIA data series"""
 
         self.url = url

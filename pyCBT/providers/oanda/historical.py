@@ -5,7 +5,7 @@ from collections import OrderedDict
 from oandapyV20.contrib.factories import InstrumentsCandlesFactory
 from oandapyV20.types import DateTime
 
-from pyCBT.constants import OHLCV
+from pyCBT import candles_header
 from .account import Config
 from pyCBT.tools.timezone import timezone_shift
 
@@ -100,7 +100,7 @@ class Candles(object):
         # get candles response
         if self._response is None: self.set_response()
         # initialize dictionary table
-        table = OrderedDict(zip(["DATETIME"]+OHLCV, [[], [], [], [], [], []]))
+        table = OrderedDict(zip(candles_header, [[], [], [], [], [], []]))
         # for each candle in response
         for candle in self._response:
         #   only take completed candles

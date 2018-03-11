@@ -14,9 +14,10 @@ from collections import OrderedDict
 from ruamel.yaml import YAML
 import oandapyV20
 from oandapyV20.endpoints.accounts import AccountList, AccountInstruments
-from pyCBT.constants import DATADIR
+from pyCBT import data_path
 
 
+# TODO: use JSON for summary storage instead of YAML (more standard approach)
 class Config(object):
     """Given a OANDA token, generate a config summary.
 
@@ -146,7 +147,7 @@ class Config(object):
 
         self.summary = None
 
-        self._filename_template = os.path.join(DATADIR, "providers/oanda/.oanda-account{}.yml")
+        self._filename_template = os.path.join(data_path, ".oanda-account{}.yml")
         self._filename = None
 
     def update_defaults(self, **kwargs):
