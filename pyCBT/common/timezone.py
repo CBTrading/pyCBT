@@ -18,7 +18,7 @@ def parse_tz(datetime_str=None, in_tz="America/Caracas"):
             except ValueError:
                 raise ValueError("Unknown datetime format for {}.".format(datetime_str))
 
-    if dt.tzinfo is None: dt = dt.replace(tzinfo=pytz.timezone(in_tz))
+    if dt.tzinfo is None: dt = pytz.timezone(in_tz).localize(dt, is_dst=False)
 
     return dt
 
