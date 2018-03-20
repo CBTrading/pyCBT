@@ -389,3 +389,23 @@ class Client(object):
             request_params={"timeout": kwargs.pop("timeout")}
         )
         return None
+
+class Instruments(object):
+    """Builds a list of tradeable instruments from the OANDA account
+    """
+    def __init__(self, **kwargs):
+        client = Client(**kwargs)
+        r = AccountInstruments(accountID=client.account_summary.get("account"))
+        client.api.request(r)
+        response = r.response.get("instruments")
+        self.table = {"symbol": [], "name": [], "type": []}
+        for instrument in response:
+            for kw in instrument:
+                if kw == "displayName":
+                    self.table["name"] += [instrument[kw]]
+                elif kw == "type":
+                    self.table["type"] += [instrument[kw]]
+                elif kw == "name":
+                    self.table["symbol"] += [instrument[kw]]
+                else:
+                    continue
