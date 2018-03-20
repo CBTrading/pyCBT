@@ -393,8 +393,7 @@ class Client(object):
 class Instruments(object):
     """Builds a list of tradeable instruments from the OANDA account
     """
-    def __init__(self, **kwargs):
-        client = Client(**kwargs)
+    def __init__(self, client):
         r = AccountInstruments(accountID=client.account_summary.get("account"))
         client.api.request(r)
         response = r.response.get("instruments")
