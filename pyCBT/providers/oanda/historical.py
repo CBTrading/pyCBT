@@ -109,16 +109,16 @@ class Candles(object):
                 for kw in candle:
         #           store prices in table
                     if kw in ["bid", "ask", "mid"]:
-                        table["OPEN"] += [float(candle[kw]["o"])]
-                        table["HIGH"] += [float(candle[kw]["h"])]
-                        table["LOW"] += [float(candle[kw]["l"])]
-                        table["CLOSE"] += [float(candle[kw]["c"])]
+                        table["Open"] += [float(candle[kw]["o"])]
+                        table["High"] += [float(candle[kw]["h"])]
+                        table["Low"] += [float(candle[kw]["l"])]
+                        table["Close"] += [float(candle[kw]["c"])]
         #           store volume in table
                     elif kw == "volume":
-                        table["VOLUME"] += [float(candle[kw])]
+                        table["Volume"] += [float(candle[kw])]
         #           store datetime in table
                     elif kw == "time":
-                        table["DATETIME"] += [timezone_shift(
+                        table["Datetime"] += [timezone_shift(
                             datetime_str=candle[kw],
                             in_tz="UTC",
                             out_tz=self.timezone,
@@ -134,8 +134,8 @@ class Candles(object):
         # get dictionary table
         d = self.as_dictionary()
         # define index
-        i = d.pop("DATETIME")
+        i = d.pop("Datetime")
         # define table
-        table = pd.DataFrame(d, index=pd.Series(name="DATETIME", data=i))
+        table = pd.DataFrame(d, index=pd.Series(name="Datetime", data=i))
         self._dataframe_table = table
         return table
