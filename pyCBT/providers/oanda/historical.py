@@ -39,6 +39,7 @@ class Candles(object):
         The timezone of the given datetimes. Also used to align the candlesticks.
         Defaults to timezone in the config file (see '.account.Config').
     """
+    # TODO: implement return name of the candles
     # TODO: implement option for storing incomplete candle (if incomplete also return array mask 'complete')
     # TODO: once I know what the heck is alignmentTimezone, implement option to do it or not
     # TODO: alignmentTimezone is the shifting of the candles to the closing time at the given location

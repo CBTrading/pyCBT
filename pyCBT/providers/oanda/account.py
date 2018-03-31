@@ -372,7 +372,7 @@ class Client(object):
                 )
 
         # initialize API client
-        # TODO: the token is still visible from self.api
+        # TODO: the token is still visible from self.api, use object properties to hide this information
         self.api = oandapyV20.API(
             access_token=account_summary.pop("token"),
             environment=account_summary.pop("environment"),
@@ -397,14 +397,4 @@ class Instruments(object):
         r = AccountInstruments(accountID=client.account_summary.get("account"))
         client.api.request(r)
         response = r.response.get("instruments")
-        self.table = {"symbol": [], "name": [], "type": []}
-        for instrument in response:
-            for kw in instrument:
-                if kw == "displayName":
-                    self.table["name"] += [instrument[kw]]
-                elif kw == "type":
-                    self.table["type"] += [instrument[kw]]
-                elif kw == "name":
-                    self.table["symbol"] += [instrument[kw]]
-                else:
-                    continue
+        self.table = {inst["name"]: {"name": inst["displayName"], "type": inst["type"]} for inst in response}
