@@ -4,6 +4,8 @@ from dateutil.parser import parse
 from datetime import datetime, timedelta
 
 
+# TODO: implement resolution (H1, D, etc.) to timedelta to download only data needed in correlation,
+#       volatility and other charts
 # TODO: implement parser as a decorator
 # TODO: implement checking if datetime_str is JSON or UNIX
 def parse_tz(datetime_str=None, in_tz="America/Caracas"):
@@ -22,6 +24,7 @@ def parse_tz(datetime_str=None, in_tz="America/Caracas"):
 
     return dt
 
+# TODO: check if need to parse or if datetime is already a datetime object
 def timezone_shift(datetime_str=None, in_tz="America/Caracas", out_tz="UTC", fmt="RFC3339"):
     """Turns a datetime string from one timezone to another in a given format
 
@@ -47,6 +50,7 @@ def timezone_shift(datetime_str=None, in_tz="America/Caracas", out_tz="UTC", fmt
     if fmt in ["RFC3339", "UNIX", "JSON"]: out_tz = "UTC"
     if in_tz != out_tz: dt = dt.astimezone(pytz.timezone(out_tz))
 
+    # TODO: turn UNIX and JSON into strings
     if fmt == "UNIX":
         dt_str = round((dt - datetime(1970, 1, 1, tzinfo=pytz.UTC)).total_seconds(), 9)
     elif fmt == "JSON":
