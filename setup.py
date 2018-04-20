@@ -17,22 +17,28 @@ setup(
         "Topic :: Finances :: Data Analysis :: Machine Learning"
     ],
     keywords="finances FOREX analysis ML",
-    url="https://github.com/ajmejia/python-cbt",
+    url="https://github.com/ajmejia/CBTrading/pyCBT",
     author="Alfredo Mejia-Narvaez",
     author_email="alfredo.m.cbt@gmail.com",
     license="MIT",
     packages=["pyCBT"],
     install_requires=[
+        "lxml == 4.1.1",
         "numpy == 1.14.1",
         "oandapyV20 == 0.5.0",
         "pandas == 0.22.0",
         "python_dateutil == 2.6.1",
         "pytz == 2018.3",
-        "ruamel.yaml == 0.15.35"
+        "ruamel.yaml == 0.15.35",
+        "selenium == 3.10.0"
     ],
     include_package_data=True,
     zip_safe=False,
     test_suite="nose.collector",
     tests_require=["nose"],
-    scripts=["bin/cbt-config"],
+    scripts=[
+        "bin/cbt-config",
+        "bin/get-investing-calendar",
+        "bin/get-wti-candles"
+    ],
 )
