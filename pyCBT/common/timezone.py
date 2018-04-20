@@ -1,4 +1,4 @@
-import pytz
+import pytz, re
 import numpy as np
 from dateutil.parser import parse
 from datetime import datetime, timedelta
@@ -8,10 +8,16 @@ from datetime import datetime, timedelta
 #       volatility and other charts
 # TODO: implement parser as a decorator
 # TODO: implement checking if datetime_str is JSON or UNIX
-def parse_tz(datetime_str=None, in_tz="America/Caracas"):
+
+
+def parse_tz(datetime_str=None, in_tz="America/Caracas", remove_pattern=None):
     if datetime_str is None:
         dt = datetime.now(tz=pytz.timezone(in_tz))
     else:
+        if remove_pattern:
+            match = re.findall(pattern, datetime_str)
+            while match:
+                datetime_str = datetime_str.replace(match.pop(), "")
         try:
             dt = parse(datetime_str)
         except ValueError:
