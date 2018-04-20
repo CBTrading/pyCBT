@@ -104,27 +104,25 @@ class Candles(object):
         table = OrderedDict(zip(candles_header, [[], [], [], [], [], []]))
         # for each candle in response
         for candle in self._response:
-        #   only take completed candles
-            if candle.pop("complete"):
-        #       for each keyword (ex.: volume, time) in candle
-                for kw in candle:
-        #           store prices in table
-                    if kw in ["bid", "ask", "mid"]:
-                        table["Open"] += [float(candle[kw]["o"])]
-                        table["High"] += [float(candle[kw]["h"])]
-                        table["Low"] += [float(candle[kw]["l"])]
-                        table["Close"] += [float(candle[kw]["c"])]
-        #           store volume in table
-                    elif kw == "volume":
-                        table["Volume"] += [float(candle[kw])]
-        #           store datetime in table
-                    elif kw == "time":
-                        table["Datetime"] += [timezone_shift(
-                            datetime_str=candle[kw],
-                            in_tz="UTC",
-                            out_tz=self.timezone,
-                            fmt=self.datetime_fmt
-                        )]
+    #       for each keyword (ex.: volume, time) in candle
+            for kw in candle:
+    #           store prices in table
+                if kw in ["bid", "ask", "mid"]:
+                    table["Open"] += [float(candle[kw]["o"])]
+                    table["High"] += [float(candle[kw]["h"])]
+                    table["Low"] += [float(candle[kw]["l"])]
+                    table["Close"] += [float(candle[kw]["c"])]
+    #           store volume in table
+                elif kw == "volume":
+                    table["Volume"] += [float(candle[kw])]
+    #           store datetime in table
+                elif kw == "time":
+                    table["Datetime"] += [timezone_shift(
+                        datetime_str=candle[kw],
+                        in_tz="UTC",
+                        out_tz=self.timezone,
+                        fmt=self.datetime_fmt
+                    )]
         self._dict_table = table
         return table
 
