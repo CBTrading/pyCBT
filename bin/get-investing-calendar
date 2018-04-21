@@ -1,14 +1,7 @@
 #!/usr/bin/env python
 
-import string
 from pyCBT.providers.scrappers import investing
 
-# define the base URL, with formatting options for name of the calendar and id
-BASE_URL = "https://www.investing.com/economic-calendar/{calendar}-{id}"
-# define base table name (HTML id)
-TABLE_ID = "eventHistoryTable{id}"
-# define base show more link (HTML id)
-SHOW_MORE_ID = "showMoreHistory{id}"
 
 # TODO: implement several values-for-one-option parsing
 # TODO: some datetime formats are not working: JSON is a float, ISO not recognized
@@ -59,7 +52,7 @@ def parse_args(*args, **kwargs):
     return args._get_args(), dict(args._get_kwargs())
 
 def dump_data(*args, **kwargs):
-    import os, sys, re
+    import os, sys, re, string
     import pandas as pd
     from pyCBT.common.files import exist
     from openpyxl import load_workbook
