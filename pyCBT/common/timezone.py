@@ -15,7 +15,7 @@ def parse_tz(datetime_str=None, in_tz="America/Caracas", remove_pattern=None):
         dt = datetime.now(tz=pytz.timezone(in_tz))
     else:
         if remove_pattern:
-            match = re.findall(pattern, datetime_str)
+            match = re.findall(remove_pattern, datetime_str)
             while match:
                 datetime_str = datetime_str.replace(match.pop(), "")
         try:
@@ -31,7 +31,7 @@ def parse_tz(datetime_str=None, in_tz="America/Caracas", remove_pattern=None):
     return dt
 
 # TODO: check if need to parse or if datetime is already a datetime object
-def timezone_shift(datetime_str=None, in_tz="America/Caracas", out_tz="UTC", fmt="RFC3339"):
+def timezone_shift(datetime_str=None, in_tz="America/Caracas", out_tz="UTC", fmt="RFC3339", remove_pattern=None):
     """Turns a datetime string from one timezone to another in a given format
 
     Given a datetime string in a timezone 'in_tz', this function performs the
@@ -52,7 +52,7 @@ def timezone_shift(datetime_str=None, in_tz="America/Caracas", out_tz="UTC", fmt
             - JSON
         Any the listed options will be in UTC regardless of 'out_tz'.
     """
-    dt = parse_tz(datetime_str, in_tz)
+    dt = parse_tz(datetime_str, in_tz, remove_pattern)
     if fmt in ["RFC3339", "UNIX", "JSON"]: out_tz = "UTC"
     if in_tz != out_tz: dt = dt.astimezone(pytz.timezone(out_tz))
 
