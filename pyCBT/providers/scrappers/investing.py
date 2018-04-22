@@ -41,8 +41,8 @@ def _get_table(browser, id):
     date = parse_tz(
         datetime_str=date_str,
         in_tz="America/New_York",
-        replace_pattern=(r"^\w{3}", r"\(\w{3}\)"),
-        parse_quarter=True
+        remove_pattern=r"\(Q\d\)",
+        replace_pattern=(r"^\w{3}", r"\(\w{3}\)")
     )
     return table, date
 
@@ -90,7 +90,7 @@ def get_calendar(*args, **kwargs):
             "America/New_York",
             kwargs.get("timezone"),
             kwargs.get("datetime_format"),
-            None,
+            r"\(Q\d\)",
             (r"^\w{3}", r"\(\w{3}\)")
         )
     )
