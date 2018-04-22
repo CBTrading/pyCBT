@@ -8,16 +8,21 @@ from datetime import datetime, timedelta
 #       volatility and other charts
 # TODO: implement parser as a decorator
 # TODO: implement checking if datetime_str is JSON or UNIX
-
-
-def parse_tz(datetime_str=None, in_tz="America/Caracas", remove_pattern=None):
+def parse_tz(datetime_str=None, in_tz="America/Caracas", remove_pattern=None, replace_pattern=None):
     if datetime_str is None:
         dt = datetime.now(tz=pytz.timezone(in_tz))
     else:
-        if remove_pattern:
-            match = re.findall(remove_pattern, datetime_str)
-            while match:
-                datetime_str = datetime_str.replace(match.pop(), "")
+        if replace_pattern:
+            m1 = re.findall(replace_pattern[0], datetime_str)
+            m2 = re.findall(replace_pattern[1], datetime_str)
+            while m2:
+                _ = m2.pop()
+                datetime_str = datetime_str.replace(_, "")
+                datetime_str = datetime_str.replace(m1.pop(), _.strip("()"))
+        elif remove_pattern:
+            m = re.findall(remove_pattern, datetime_str)
+            while m:
+                datetime_str = datetime_str.replace(m.pop(), "")
         try:
             dt = parse(datetime_str)
         except ValueError:
@@ -31,7 +36,7 @@ def parse_tz(datetime_str=None, in_tz="America/Caracas", remove_pattern=None):
     return dt
 
 # TODO: check if need to parse or if datetime is already a datetime object
-def timezone_shift(datetime_str=None, in_tz="America/Caracas", out_tz="UTC", fmt="RFC3339", remove_pattern=None):
+def timezone_shift(datetime_str=None, in_tz="America/Caracas", out_tz="UTC", fmt="RFC3339", remove_pattern=None, replace_pattern=None):
     """Turns a datetime string from one timezone to another in a given format
 
     Given a datetime string in a timezone 'in_tz', this function performs the
@@ -52,7 +57,7 @@ def timezone_shift(datetime_str=None, in_tz="America/Caracas", out_tz="UTC", fmt
             - JSON
         Any the listed options will be in UTC regardless of 'out_tz'.
     """
-    dt = parse_tz(datetime_str, in_tz, remove_pattern)
+    dt = parse_tz(datetime_str, in_tz, remove_pattern, replace_pattern)
     if fmt in ["RFC3339", "UNIX", "JSON"]: out_tz = "UTC"
     if in_tz != out_tz: dt = dt.astimezone(pytz.timezone(out_tz))
 
