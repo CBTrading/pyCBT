@@ -8,20 +8,33 @@ from datetime import datetime, timedelta
 #       volatility and other charts
 # TODO: implement parser as a decorator
 # TODO: implement checking if datetime_str is JSON or UNIX
-def parse_tz(datetime_str=None, in_tz="America/Caracas", remove_pattern=None, replace_pattern=None):
+def parse_tz(datetime_str=None, in_tz="America/Caracas", remove_pattern=None, replace_pattern=None, parse_quarter=False):
     if datetime_str is None:
         dt = datetime.now(tz=pytz.timezone(in_tz))
     else:
+        if parse_quarter:
+            m1 = re.findall(r"^\w{3}", datetime_str)
+            m2 = re.findall(r"\(Q\d\)", datetime_str)
+            if m2:
+                month = m1.pop()
+                _ = m2.pop()
+                imonth = datetime.strptime(month, "%b").month
+                nquart = 3 * eval(_.strip("(Q)"))
+                nmonth = imonth - nquart if nquart > 0 else 12 + imonth - nquart
+                datetime_str = datetime_str.replace(_, "")
+                datetime_str = datetime_str.replace(month, datetime(1900, nmonth, 1).strftime("%b"))
+                datetime_str = datetime_str.strip()
         if replace_pattern:
             m1 = re.findall(replace_pattern[0], datetime_str)
             m2 = re.findall(replace_pattern[1], datetime_str)
-            while m2:
+            if m2:
                 _ = m2.pop()
                 datetime_str = datetime_str.replace(_, "")
                 datetime_str = datetime_str.replace(m1.pop(), _.strip("()"))
+                datetime_str = datetime_str.strip()
         elif remove_pattern:
             m = re.findall(remove_pattern, datetime_str)
-            while m:
+            if m:
                 datetime_str = datetime_str.replace(m.pop(), "")
         try:
             dt = parse(datetime_str)
