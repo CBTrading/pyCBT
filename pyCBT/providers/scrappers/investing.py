@@ -53,12 +53,16 @@ def get_calendar(*args, **kwargs):
 
     wait = WebDriverWait(browser, 10)
     while last_record_date > from_date:
-        show_more = wait.until(EC.element_to_be_clickable((By.ID, SHOW_MORE_ID.format(id=id))))
-        browser.execute_script("arguments[0].click();", show_more)
+        try:
+            show_more = wait.until(EC.element_to_be_clickable((By.ID, SHOW_MORE_ID.format(id=id))))
+        except:
+            if not show_more.is_displayed(): break
+        else:
+            browser.execute_script("arguments[0].click();", show_more)
 
-        inv_table = wait.until(inventory_table_has_changed_from((By.ID, TABLE_ID.format(id=id)), inv_table))
-        last_date_str = inv_table.find_element_by_css_selector("tbody tr:last-child td").text
-        last_record_date = parse_tz(remove_pattern(last_date_str, r"\(\w+\)"), in_tz="America/New_York")
+            inv_table = wait.until(table_has_changed_from((By.ID, TABLE_ID.format(id=id)), inv_table))
+            last_date_str = inv_table.find_element_by_css_selector("tbody tr:last-child td").text
+            last_record_date = parse_tz(last_date_str, in_tz="America/New_York", remove_pattern=r"\(\w+\)")
 
     table = pd.read_html(u"<table>"+inv_table.get_attribute("innerHTML")+u"</table>")[0]
     table.insert(0, "Datetime", value=table["Release Date"]+" "+table["Time"])
