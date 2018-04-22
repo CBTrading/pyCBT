@@ -73,7 +73,7 @@ def get_calendar(*args, **kwargs):
             r"\(\w+\)"
         )
     )
-    mask = [not (from_date <= parse_tz(release_date, in_tz="America/New_York") <= to_date) for release_date in table["Datetime"]]
+    mask = [not (from_date <= parse_tz(release_date, in_tz=kwargs.get("timezone")) <= to_date) for release_date in table["Datetime"]]
     table.drop(table.index[mask], axis="index", inplace=True)
     table.drop(["Release Date", "Time", "Unnamed: 5"], axis="columns", inplace=True)
     table.set_index("Datetime", inplace=True)
