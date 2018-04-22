@@ -39,14 +39,12 @@ class table_has_changed_from(object):
 def parse_units(series):
     """Returns a dataframe with numeric column.
     """
-    if type(series[0]) == str:
-        unit = series[0][-1]
-        if unit == "K":
-            series = series.apply(lambda cell: eval(cell.strip(unit))*1000.)
-        elif unit == "M":
-            series = series.apply(lambda cell: eval(cell.strip(unit))*1000000.)
-        elif unit == "%":
-            series = series.apply(lambda cell: eval(cell.strip(unit)))
+    mult = {
+        "K": 1000.0,
+        "M": 1000000.0,
+        "%": 1.0
+    }
+    series = series.apply(lambda cell: eval(cell.strip(cell[-1]))*mult[cell[-1]] if type(cell) == str else cell)
     return series
 
 def get_calendar(*args, **kwargs):
