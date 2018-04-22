@@ -1,4 +1,4 @@
-import locale, string
+import re, locale, string
 import pandas as pd
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
@@ -84,6 +84,9 @@ def get_calendar(*args, **kwargs):
     table.insert(0, "Datetime", value=table["Release Date"]+" "+table["Time"])
     better = map(lambda span: "better" in span.get_attribute("title").lower() if span.get_attribute("title").strip() else None, cal_table.find_elements_by_css_selector("tbody tr td:nth-child(3) span"))
     table.insert(table.columns.size, "Better", value=better)
+    if re.search(r"\(Q\d\)", table["Release Date"][0]):
+        quarter = map(lambda datetime_str: eval(re.findall(r"\(Q\d\)", datetime_str)[0].strip("(Q)")) if re.search(r"\(Q\d\)", datetime_str) else None, table["Release Date"])
+        table.insert(1, "Quarter", value=quarter)
     table["Datetime"] = table["Datetime"].apply(
         timezone_shift,
         args=(
