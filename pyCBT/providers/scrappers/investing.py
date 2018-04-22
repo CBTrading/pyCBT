@@ -54,7 +54,7 @@ def _parse_units(series):
         "M": 1000000.0,
         "%": 1.0
     }
-    series = series.apply(lambda cell: eval(cell.strip(cell[-1]))*mult[cell[-1]] if type(cell) == str else cell)
+    series = series.apply(lambda cell: locale.atoi(cell.strip(cell[-1]))*mult.get(cell[-1], 1.0) if type(cell) == str else cell)
     return series
 
 def get_calendar(*args, **kwargs):
