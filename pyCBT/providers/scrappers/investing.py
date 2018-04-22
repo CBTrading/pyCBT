@@ -7,6 +7,12 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from pyCBT.common.timezone import parse_tz, timezone_shift
 
+# define the base URL, with formatting options for name of the calendar and id
+BASE_URL = "https://www.investing.com/economic-calendar/{calendar}-{id}"
+# define base table name (HTML id)
+TABLE_ID = "eventHistoryTable{id}"
+# define base show more link (HTML id)
+SHOW_MORE_ID = "showMoreHistory{id}"
 
 class table_has_changed_from(object):
     """An expectation for checking the table has changed.
