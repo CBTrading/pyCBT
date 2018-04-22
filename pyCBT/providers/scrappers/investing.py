@@ -49,7 +49,7 @@ def get_calendar(*args, **kwargs):
 
     inv_table = browser.find_element(By.ID, TABLE_ID.format(id=id))
     last_date_str = inv_table.find_element_by_css_selector("tbody tr:last-child td").text
-    last_record_date = parse_tz(remove_pattern(last_date_str, r"\(\w+\)"), in_tz="America/New_York")
+    last_record_date = parse_tz(last_date_str, in_tz="America/New_York", remove_pattern=r"\(\w+\)")
 
     wait = WebDriverWait(browser, 10)
     while last_record_date > from_date:
@@ -64,10 +64,14 @@ def get_calendar(*args, **kwargs):
     table.insert(0, "Datetime", value=table["Release Date"]+" "+table["Time"])
     better = map(lambda span: "better" in span.get_attribute("title").lower() if span.get_attribute("title").strip() else None, inv_table.find_elements_by_css_selector("tbody tr td:nth-child(3) span"))
     table.insert(table.columns.size, "Better", value=better)
-    table["Datetime"] = table["Datetime"].apply(remove_pattern, args=(r"\(\w+\)",))
     table["Datetime"] = table["Datetime"].apply(
         timezone_shift,
-        args=("America/New_York", kwargs.get("timezone"), kwargs.get("datetime_format"))
+        args=(
+            "America/New_York",
+            kwargs.get("timezone"),
+            kwargs.get("datetime_format"),
+            r"\(\w+\)"
+        )
     )
     mask = [not (from_date <= parse_tz(release_date, in_tz="America/New_York") <= to_date) for release_date in table["Datetime"]]
     table.drop(table.index[mask], axis="index", inplace=True)
