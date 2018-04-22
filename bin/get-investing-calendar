@@ -17,15 +17,6 @@ def parse_args(*args, **kwargs):
         help="The name of the calendar, e.g.: gdp-375, adp-nonfarm-employment-change-1. Defaults to eia-crude-oil-inventories-75."
     )
     parser.add_argument(
-        "timezone",
-        help="Timezone of 'from-date' & 'to-date' also alignment for the dataset."
-    )
-    parser.add_argument(
-        "datetime_format",
-        metavar="datetime-format",
-        help="The datetime format of the dataset, example: RFC3339, UNIX, JSON, or any datetime format string.",
-    )
-    parser.add_argument(
         "--from_date",
         metavar="from-date",
         help="Starting date in dataset. Defaults to first register in table.",
@@ -35,6 +26,17 @@ def parse_args(*args, **kwargs):
         "--to_date",
         metavar="to-date",
         help="Closing date in dataset. Defaults to now in the given timezone."
+    )
+    parser.add_argument(
+        "--timezone",
+        help="Timezone of 'from-date' & 'to-date' also alignment for the dataset.",
+        default="America/New_York"
+    )
+    parser.add_argument(
+        "--datetime_format",
+        metavar="datetime-format",
+        help="The datetime format of the dataset, example: RFC3339, UNIX, JSON, or any datetime format string.",
+        default="%Y-%m-%d"
     )
     parser.add_argument(
         "--save-to", "-s",
