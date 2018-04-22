@@ -7,6 +7,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from pyCBT.common.timezone import parse_tz, timezone_shift
 
+locale.setlocale(locale.LC_ALL, "en_US")
 
 BASE_URL = "https://www.investing.com/economic-calendar/{calendar}-{id}"
 TABLE_ID = "eventHistoryTable{id}"
@@ -58,7 +59,6 @@ def _parse_units(series):
     return series
 
 def get_calendar(*args, **kwargs):
-    locale.setlocale(locale.LC_TIME, "en_US")
     from_date = parse_tz(kwargs.get("from_date"), in_tz=kwargs.get("timezone"))
     to_date = parse_tz(kwargs.get("to_date"), in_tz=kwargs.get("timezone"))
 
@@ -103,5 +103,4 @@ def get_calendar(*args, **kwargs):
     table.set_index("Datetime", inplace=True)
 
     table = table.apply(_parse_units)
-    locale.resetlocale(locale.LC_TIME)
     return table
