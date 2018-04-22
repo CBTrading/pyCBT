@@ -36,6 +36,19 @@ class table_has_changed_from(object):
         else:
             return False
 
+def parse_units(series):
+    """Returns a dataframe with numeric column.
+    """
+    if type(series[0]) == str:
+        unit = series[0][-1]
+        if unit == "K":
+            series = series.apply(lambda cell: eval(cell.strip(unit))*1000.)
+        elif unit == "M":
+            series = series.apply(lambda cell: eval(cell.strip(unit))*1000000.)
+        elif unit == "%":
+            series = series.apply(lambda cell: eval(cell.strip(unit)))
+    return series
+
 def get_calendar(*args, **kwargs):
     locale.setlocale(locale.LC_TIME, "en_US")
     from_date = parse_tz(kwargs.get("from_date"), in_tz=kwargs.get("timezone"))
@@ -82,6 +95,7 @@ def get_calendar(*args, **kwargs):
     table.drop(table.index[mask], axis="index", inplace=True)
     table.drop(["Release Date", "Time", "Unnamed: 5"], axis="columns", inplace=True)
     table.set_index("Datetime", inplace=True)
-    table = table.applymap(lambda cell: eval(cell.strip("KM%")) if type(cell) == str else cell)
+
+    table = table.apply(parse_units)
     locale.resetlocale(locale.LC_TIME)
     return table
