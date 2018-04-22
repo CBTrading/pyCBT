@@ -20,7 +20,7 @@ def parse_tz(datetime_str=None, in_tz="America/Caracas", remove_pattern=None, re
                 datetime_str = datetime_str.replace(_, "")
                 datetime_str = datetime_str.replace(m1.pop(), _.strip("()"))
                 datetime_str = datetime_str.strip()
-        elif remove_pattern:
+        if remove_pattern:
             m = re.findall(remove_pattern, datetime_str)
             if m:
                 datetime_str = datetime_str.replace(m.pop(), "")
