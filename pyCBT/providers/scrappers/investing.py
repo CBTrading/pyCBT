@@ -7,12 +7,11 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from pyCBT.common.timezone import parse_tz, timezone_shift
 
-# define the base URL, with formatting options for name of the calendar and id
+
 BASE_URL = "https://www.investing.com/economic-calendar/{calendar}-{id}"
-# define base table name (HTML id)
 TABLE_ID = "eventHistoryTable{id}"
-# define base show more link (HTML id)
 SHOW_MORE_ID = "showMoreHistory{id}"
+
 
 class table_has_changed_from(object):
     """An expectation for checking the table has changed.
@@ -36,7 +35,18 @@ class table_has_changed_from(object):
         else:
             return False
 
-def parse_units(series):
+def _get_table(browser, id):
+    table = browser.find_element(By.ID, TABLE_ID.format(id=id))
+    date_str = table.find_element_by_css_selector("tbody tr:last-child td").text
+    date = parse_tz(
+        datetime_str=date_str,
+        in_tz="America/New_York",
+        replace_pattern=(r"^\w{3}", r"\(\w{3}\)"),
+        parse_quarter=True
+    )
+    return table, date
+
+def _parse_units(series):
     """Returns a dataframe with numeric column.
     """
     mult = {
@@ -58,9 +68,7 @@ def get_calendar(*args, **kwargs):
     browser = webdriver.Chrome()
     browser.get(BASE_URL.format(calendar=calendar, id=id))
 
-    inv_table = browser.find_element(By.ID, TABLE_ID.format(id=id))
-    last_date_str = inv_table.find_element_by_css_selector("tbody tr:last-child td").text
-    last_record_date = parse_tz(last_date_str, in_tz="America/New_York", replace_pattern=(r"^\w{3}", r"\(\w{3}\)"))
+    cal_table, last_record_date = _get_table(browser, id)
 
     wait = WebDriverWait(browser, 10)
     while last_record_date > from_date:
@@ -70,14 +78,11 @@ def get_calendar(*args, **kwargs):
             if not show_more.is_displayed(): break
         else:
             browser.execute_script("arguments[0].click();", show_more)
+            cal_table, last_record_date = _get_table(browser, id)
 
-            inv_table = wait.until(table_has_changed_from((By.ID, TABLE_ID.format(id=id)), inv_table))
-            last_date_str = inv_table.find_element_by_css_selector("tbody tr:last-child td").text
-            last_record_date = parse_tz(last_date_str, in_tz="America/New_York", replace_pattern=(r"^\w{3}", r"\(\w{3}\)"))
-
-    table = pd.read_html(u"<table>"+inv_table.get_attribute("innerHTML")+u"</table>")[0]
+    table = pd.read_html(u"<table>"+cal_table.get_attribute("innerHTML")+u"</table>")[0]
     table.insert(0, "Datetime", value=table["Release Date"]+" "+table["Time"])
-    better = map(lambda span: "better" in span.get_attribute("title").lower() if span.get_attribute("title").strip() else None, inv_table.find_elements_by_css_selector("tbody tr td:nth-child(3) span"))
+    better = map(lambda span: "better" in span.get_attribute("title").lower() if span.get_attribute("title").strip() else None, cal_table.find_elements_by_css_selector("tbody tr td:nth-child(3) span"))
     table.insert(table.columns.size, "Better", value=better)
     table["Datetime"] = table["Datetime"].apply(
         timezone_shift,
@@ -94,6 +99,6 @@ def get_calendar(*args, **kwargs):
     table.drop(["Release Date", "Time", "Unnamed: 5"], axis="columns", inplace=True)
     table.set_index("Datetime", inplace=True)
 
-    table = table.apply(parse_units)
+    table = table.apply(_parse_units)
     locale.resetlocale(locale.LC_TIME)
     return table
