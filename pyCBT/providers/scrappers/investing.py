@@ -49,7 +49,7 @@ def get_calendar(*args, **kwargs):
 
     inv_table = browser.find_element(By.ID, TABLE_ID.format(id=id))
     last_date_str = inv_table.find_element_by_css_selector("tbody tr:last-child td").text
-    last_record_date = parse_tz(last_date_str, in_tz="America/New_York", remove_pattern=r"\(\w+\)")
+    last_record_date = parse_tz(last_date_str, in_tz="America/New_York", replace_pattern=(r"^\w{3}", r"\(\w{3}\)"))
 
     wait = WebDriverWait(browser, 10)
     while last_record_date > from_date:
@@ -62,7 +62,7 @@ def get_calendar(*args, **kwargs):
 
             inv_table = wait.until(table_has_changed_from((By.ID, TABLE_ID.format(id=id)), inv_table))
             last_date_str = inv_table.find_element_by_css_selector("tbody tr:last-child td").text
-            last_record_date = parse_tz(last_date_str, in_tz="America/New_York", remove_pattern=r"\(\w+\)")
+            last_record_date = parse_tz(last_date_str, in_tz="America/New_York", replace_pattern=(r"^\w{3}", r"\(\w{3}\)"))
 
     table = pd.read_html(u"<table>"+inv_table.get_attribute("innerHTML")+u"</table>")[0]
     table.insert(0, "Datetime", value=table["Release Date"]+" "+table["Time"])
@@ -74,7 +74,8 @@ def get_calendar(*args, **kwargs):
             "America/New_York",
             kwargs.get("timezone"),
             kwargs.get("datetime_format"),
-            r"\(\w+\)"
+            None,
+            (r"^\w{3}", r"\(\w{3}\)")
         )
     )
     mask = [not (from_date <= parse_tz(release_date, in_tz=kwargs.get("timezone")) <= to_date) for release_date in table["Datetime"]]
