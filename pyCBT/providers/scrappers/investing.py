@@ -64,6 +64,8 @@ def get_calendar(*args, **kwargs):
             last_date_str = inv_table.find_element_by_css_selector("tbody tr:last-child td").text
             last_record_date = parse_tz(last_date_str, in_tz="America/New_York", remove_pattern=r"\(\w+\)")
 
+    browser.close()
+
     table = pd.read_html(u"<table>"+inv_table.get_attribute("innerHTML")+u"</table>")[0]
     table.insert(0, "Datetime", value=table["Release Date"]+" "+table["Time"])
     better = map(lambda span: "better" in span.get_attribute("title").lower() if span.get_attribute("title").strip() else None, inv_table.find_elements_by_css_selector("tbody tr td:nth-child(3) span"))
