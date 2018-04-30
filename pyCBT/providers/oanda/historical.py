@@ -54,10 +54,10 @@ class Candles(object):
         # define params of candles
         self.instrument = instrument
         self.resolution = resolution
-        self.timezone = timezone or self.account_summary.pop("timezone")
+        self.timezone = timezone or self.account_summary.get("timezone")
         self.from_date = timezone_shift(from_date, in_tz=self.timezone)
         self.to_date = timezone_shift(to_date, in_tz=self.timezone)
-        self.datetime_fmt = datetime_fmt or self.account_summary.pop("datetime_format")
+        self.datetime_fmt = datetime_fmt or self.account_summary.get("datetime_format")
         self.candles_params = {
             "granularity": self.resolution,
             # "alignmentTimezone": self.timezone,

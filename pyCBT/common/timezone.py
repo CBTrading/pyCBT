@@ -8,6 +8,7 @@ from datetime import datetime, timedelta
 #       volatility and other charts
 # TODO: implement parser as a decorator
 # TODO: implement checking if datetime_str is JSON or UNIX
+# TODO: time parsing will break when replacing months with different number of days
 def parse_tz(datetime_str=None, in_tz="America/Caracas", remove_pattern=None, replace_pattern=None):
     if datetime_str is None:
         dt = datetime.now(tz=pytz.timezone(in_tz))
