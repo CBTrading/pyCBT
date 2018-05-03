@@ -123,6 +123,8 @@ class Candles(object):
                         out_tz=self.timezone,
                         fmt=self.datetime_fmt
                     )]
+        _, unique_idx = np.unique(table["Datetime"], return_index=True)
+        for col_name in table: table[col_name] = list(np.array(table[col_name])[unique_idx])
         self._dict_table = table
         return table
 
