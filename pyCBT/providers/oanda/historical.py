@@ -135,8 +135,9 @@ class Candles(object):
         # get dictionary table
         d = self.as_dictionary()
         # define index
-        i = d.pop("Datetime")
+        i = pd.to_datetime(d.pop("Datetime"))
+        i.name = "Datetime"
         # define table
-        table = pd.DataFrame(d, index=pd.Series(name="Datetime", data=i))
+        table = pd.DataFrame(d, index=pd.to_datetime(i)))
         self._dataframe_table = table
         return table
