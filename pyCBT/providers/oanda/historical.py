@@ -94,50 +94,50 @@ class Candles(object):
         self._response = self._get_response()
         return None
 
-    def as_dictionary(self):
+    def as_dictionary(self, column_names=candles_header):
         """Return candles response as tabulated dictionary
         """
         if self._dict_table is not None: return self._dict_table
         # get candles response
         if self._response is None: self.set_response()
         # initialize dictionary table
-        table = OrderedDict(zip(candles_header, [[], [], [], [], [], []]))
+        table = OrderedDict(zip(column_names, [[], [], [], [], [], []]))
         # for each candle in response
         for candle in self._response:
     #       for each keyword (ex.: volume, time) in candle
             for kw in candle:
     #           store prices in table
                 if kw in ["bid", "ask", "mid"]:
-                    table["Open"] += [float(candle[kw]["o"])]
-                    table["High"] += [float(candle[kw]["h"])]
-                    table["Low"] += [float(candle[kw]["l"])]
-                    table["Close"] += [float(candle[kw]["c"])]
+                    table[column_names[1]] += [float(candle[kw]["o"])]
+                    table[column_names[2]] += [float(candle[kw]["h"])]
+                    table[column_names[3]] += [float(candle[kw]["l"])]
+                    table[column_names[4]] += [float(candle[kw]["c"])]
     #           store volume in table
                 elif kw == "volume":
-                    table["Volume"] += [float(candle[kw])]
+                    table[column_names[5]] += [float(candle[kw])]
     #           store datetime in table
                 elif kw == "time":
-                    table["Datetime"] += [timezone_shift(
+                    table[column_names[0]] += [timezone_shift(
                         datetime_str=candle[kw],
                         in_tz="UTC",
                         out_tz=self.timezone,
                         fmt=self.datetime_fmt
                     )]
-        _, unique_idx = np.unique(table["Datetime"], return_index=True)
+        _, unique_idx = np.unique(table[column_names[0]], return_index=True)
         for col_name in table: table[col_name] = list(np.array(table[col_name])[unique_idx])
         self._dict_table = table
         return table
 
-    def as_dataframe(self):
+    def as_dataframe(self, index_name=candles_header[0], column_names=candles_header[1:]):
         """Return candles response as Pandas DataFrame
         """
         if self._dataframe_table is not None: return self._dataframe_table
         # get dictionary table
-        d = self.as_dictionary()
+        d = self.as_dictionary(column_names=[index_name]+column_names)
         # define index
-        i = pd.to_datetime(d.pop("Datetime"))
-        i.name = "Datetime"
+        i = pd.to_datetime(d.pop(index_name))
+        i.name = index_name
         # define table
-        table = pd.DataFrame(d, index=pd.to_datetime(i)))
+        table = pd.DataFrame(d, index=pd.to_datetime(i))
         self._dataframe_table = table
         return table
