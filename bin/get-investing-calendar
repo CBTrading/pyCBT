@@ -5,6 +5,7 @@ from pyCBT.providers.scrappers import investing
 
 # TODO: implement several values-for-one-option parsing
 # TODO: some datetime formats are not working: JSON is a float, ISO not recognized
+# TODO: remove timezone option because all calendars are already given in NY local time
 def parse_args(*args, **kwargs):
     import argparse, sys, pytz
     from datetime import datetime
@@ -90,6 +91,16 @@ def dump_data(*args, **kwargs):
     return None
 
 if __name__ == "__main__":
+    # parse command line arguments
     args, kwargs = parse_args()
-    table = investing.get_calendar(*args, **kwargs)
+
+    # retrieve calendar
+    calendar = investing.EconomicCalendar(
+        calendar=kwargs.get("calendar"),
+        from_date=kwargs.get("from_date"),
+        to_date=kwargs.get("to_date")
+    )
+    table = calendar.as_dataframe()
+
+    # dump data into file
     dump_data(table, **kwargs)

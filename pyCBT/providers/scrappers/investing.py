@@ -9,10 +9,6 @@ from pyCBT.common.timezone import parse_tz, timezone_shift
 
 locale.setlocale(locale.LC_ALL, "en_US")
 
-BASE_URL = "https://www.investing.com/economic-calendar/{calendar}-{id}"
-TABLE_ID = "eventHistoryTable{id}"
-SHOW_MORE_ID = "showMoreHistory{id}"
-
 
 class table_has_changed_from(object):
     """An expectation for checking the table has changed.
@@ -36,71 +32,98 @@ class table_has_changed_from(object):
         else:
             return False
 
-def _get_table(browser, id):
-    table = browser.find_element(By.ID, TABLE_ID.format(id=id))
-    date_str = table.find_element_by_css_selector("tbody tr:last-child td").text
-    date = parse_tz(
-        datetime_str=date_str,
-        in_tz="America/New_York",
-        remove_pattern=r"\(Q\d\)",
-        replace_pattern=(r"^\w{3}", r"\(\w{3}\)")
-    )
-    return table, date
+class EconomicCalendar(object):
+    BASE_URL = "https://www.investing.com/economic-calendar/{calendar}-{id}"
+    TABLE_ID = "eventHistoryTable{id}"
+    SHOW_MORE_ID = "showMoreHistory{id}"
 
-def _parse_units(series):
-    """Returns a dataframe with numeric column.
-    """
-    mult = {
-        "K": 1000.0,
-        "M": 1000000.0,
-        "%": 1.0
-    }
-    series = series.apply(lambda cell: locale.atoi(cell.strip(cell[-1]))*mult.get(cell[-1], 1.0) if type(cell) == str else cell)
-    return series
+    def __init__(self, calendar, from_date, to_date, datetime_format="%Y-%m-%d", browser=None):
+        self.timezone = "America/New_York"
+        self.datetime_format = datetime_format
+        self.from_date = parse_tz(from_date, in_tz=self.timezone)
+        self.to_date = parse_tz(to_date, in_tz=self.timezone)
 
-def get_calendar(*args, **kwargs):
-    from_date = parse_tz(kwargs.get("from_date"), in_tz=kwargs.get("timezone"))
-    to_date = parse_tz(kwargs.get("to_date"), in_tz=kwargs.get("timezone"))
+        _ = calendar.split("-")
+        self.calendar, self.id = string.join(_[:-1], "-"), _[-1]
 
-    _ = kwargs.get("calendar").split("-")
-    calendar, id = string.join(_[:-1], "-"), _[-1]
+        self.browser = webdriver.Chrome() if not browser else browser
 
-    browser = webdriver.Chrome()
-    browser.get(BASE_URL.format(calendar=calendar, id=id))
+        self.html_table = None
 
-    cal_table, last_record_date = _get_table(browser, id)
-
-    wait = WebDriverWait(browser, 10)
-    while last_record_date > from_date:
-        try:
-            show_more = wait.until(EC.element_to_be_clickable((By.ID, SHOW_MORE_ID.format(id=id))))
-        except:
-            if not show_more.is_displayed(): break
-        else:
-            browser.execute_script("arguments[0].click();", show_more)
-            cal_table, last_record_date = _get_table(browser, id)
-
-    table = pd.read_html(u"<table>"+cal_table.get_attribute("innerHTML")+u"</table>")[0]
-    table.insert(0, "Datetime", value=table["Release Date"]+" "+table["Time"])
-    better = map(lambda span: "better" in span.get_attribute("title").lower() if span.get_attribute("title").strip() else None, cal_table.find_elements_by_css_selector("tbody tr td:nth-child(3) span"))
-    table.insert(table.columns.size, "Better", value=better)
-    if re.search(r"\(Q\d\)", table["Release Date"][0]):
-        quarter = map(lambda datetime_str: eval(re.findall(r"\(Q\d\)", datetime_str)[0].strip("(Q)")) if re.search(r"\(Q\d\)", datetime_str) else None, table["Release Date"])
-        table.insert(1, "Quarter", value=quarter)
-    table["Datetime"] = table["Datetime"].apply(
-        timezone_shift,
-        args=(
-            "America/New_York",
-            kwargs.get("timezone"),
-            kwargs.get("datetime_format"),
-            r"\(Q\d\)",
-            (r"^\w{3}", r"\(\w{3}\)")
+    def _filter_html(self):
+        table = self.browser.find_element(By.ID, self.TABLE_ID.format(id=self.id))
+        date_str = table.find_element_by_css_selector("tbody tr:last-child td").text
+        date = parse_tz(
+            datetime_str=date_str,
+            in_tz=self.timezone,
+            remove_pattern=r"\(Q\d\)",
+            replace_pattern=(r"^\w{3}", r"\(\w{3}\)")
         )
-    )
-    mask = [not (from_date <= parse_tz(release_date, in_tz=kwargs.get("timezone")) <= to_date) for release_date in table["Datetime"]]
-    table.drop(table.index[mask], axis="index", inplace=True)
-    table.drop(["Release Date", "Time", "Unnamed: 5"], axis="columns", inplace=True)
-    table.set_index("Datetime", inplace=True)
+        return table, date
 
-    table = table.apply(_parse_units)
-    return table
+    def _parse_units(self, series):
+        """Returns a dataframe with numeric column.
+        """
+        mult = {
+            "K": 1000.0,
+            "M": 1000000.0,
+            "%": 1.0
+        }
+        series = series.apply(lambda cell: locale.atof(cell.strip(cell[-1]))*mult.get(cell[-1], 1.0) if type(cell) == str else cell)
+        return series
+
+    def set_html_table(self):
+        self.browser.get(self.BASE_URL.format(calendar=self.calendar, id=self.id))
+
+        html_table, last_record_date = self._filter_html()
+
+        wait = WebDriverWait(self.browser, 10)
+        while last_record_date > self.from_date:
+            try:
+                show_more = wait.until(EC.element_to_be_clickable((By.ID, self.SHOW_MORE_ID.format(id=self.id))))
+            except:
+                if not show_more.is_displayed(): break
+            else:
+                self.browser.execute_script("arguments[0].click();", show_more)
+                html_table, last_record_date = self._filter_html(self.browser, self.id)
+
+        self.html_table = html_table
+
+        return None
+
+    def as_dataframe(self, index_name="Date"):
+        # parse HTML
+        if not self.html_table: self.set_html_table()
+
+        table, = pd.read_html(u"<table>"+self.html_table.get_attribute("innerHTML")+u"</table>")
+        # parse dates
+        table.insert(0, index_name, value=table["Release Date"]+" "+table["Time"])
+        if re.search(r"\(Q\d\)", table["Release Date"][0]):
+            quarter = table["Release Date"].apply(lambda datetime_str: eval(re.findall(r"\(Q\d\)", datetime_str)[0].strip("(Q)")) if re.search(r"\(Q\d\)", datetime_str) else None)
+            table.insert(loc=1, column="Quarter", value=quarter)
+        table[index_name] = table[index_name].apply(
+            timezone_shift,
+            args=(
+                self.timezone,
+                self.timezone,
+                self.datetime_format,
+                r"\(Q\d\)",
+                (
+                    r"^\w{3}",
+                    r"\(\w{3}\)"
+                )
+            )
+        )
+        # insert better
+        better = map(lambda span: "better" in span.get_attribute("title").lower() if span.get_attribute("title").strip() else None, self.html_table.find_elements_by_css_selector("tbody tr td:nth-child(3) span"))
+        table.insert(table.columns.size, "Better", value=better)
+        # filter by date range & cleaning
+        mask = [not (self.from_date <= parse_tz(rd, in_tz=self.timezone) <= self.to_date) for rd in table["Date"]]
+        table.drop(table.index[mask], axis="index", inplace=True)
+        table.drop(["Release Date", "Time", "Unnamed: 5"], axis="columns", inplace=True)
+        # set index
+        table.set_index("Date", inplace=True)
+
+        print table.head()
+        self.table = table.apply(self._parse_units)
+        return self.table
