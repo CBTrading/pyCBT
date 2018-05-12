@@ -86,7 +86,7 @@ class EconomicCalendar(object):
                 if not show_more.is_displayed(): break
             else:
                 self.browser.execute_script("arguments[0].click();", show_more)
-                html_table, last_record_date = self._filter_html(self.browser, self.id)
+                html_table, last_record_date = self._filter_html()
 
         self.html_table = html_table
 

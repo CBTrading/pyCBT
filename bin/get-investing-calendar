@@ -101,6 +101,7 @@ if __name__ == "__main__":
         to_date=kwargs.get("to_date")
     )
     table = calendar.as_dataframe()
+    calendar.browser.close()
 
     # dump data into file
     dump_data(table, **kwargs)
