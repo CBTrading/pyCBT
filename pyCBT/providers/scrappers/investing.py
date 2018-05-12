@@ -49,6 +49,7 @@ class EconomicCalendar(object):
         self.browser = webdriver.Chrome() if not browser else browser
 
         self.html_table = None
+        self.table = None
 
     def _filter_html(self):
         table = self.browser.find_element(By.ID, self.TABLE_ID.format(id=self.id))
@@ -92,6 +93,7 @@ class EconomicCalendar(object):
         return None
 
     def as_dataframe(self, index_name="Date"):
+        if self.table: return self.table
         # parse HTML
         if not self.html_table: self.set_html_table()
 
@@ -123,7 +125,7 @@ class EconomicCalendar(object):
         table.drop(["Release Date", "Time", "Unnamed: 5"], axis="columns", inplace=True)
         # set index
         table.set_index("Date", inplace=True)
+        table.sort_index(inplace=True)
 
-        print table.head()
         self.table = table.apply(self._parse_units)
         return self.table
