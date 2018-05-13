@@ -5,7 +5,6 @@ from pyCBT.providers.scrappers import investing
 
 # TODO: implement several values-for-one-option parsing
 # TODO: some datetime formats are not working: JSON is a float, ISO not recognized
-# TODO: remove timezone option because all calendars are already given in NY local time
 def parse_args(*args, **kwargs):
     import argparse, sys, pytz
     from datetime import datetime
@@ -24,12 +23,7 @@ def parse_args(*args, **kwargs):
     )
     parser.add_argument(
         "--to-date",
-        help="Closing date in dataset. Defaults to now in the given timezone."
-    )
-    parser.add_argument(
-        "--timezone",
-        help="Timezone of 'from-date' & 'to-date' also alignment for the dataset.",
-        default="America/New_York"
+        help="Closing date in dataset. Defaults to now in New York."
     )
     parser.add_argument(
         "--datetime-format",
@@ -48,7 +42,7 @@ def parse_args(*args, **kwargs):
     args = parser.parse_args()
 
     if args.to_date is None:
-        args.to_date = datetime.now(tz=pytz.timezone(args.timezone)).isoformat()
+        args.to_date = datetime.now(tz=pytz.timezone("America/New_York")).isoformat()
 
     return args._get_args(), dict(args._get_kwargs())
 
@@ -59,7 +53,7 @@ def dump_data(*args, **kwargs):
     from openpyxl import load_workbook
 
     dataframe, = args
-    if kwargs.get("save_to") is not None:
+    if kwargs.get("save_to"):
         if "," in kwargs["save_to"]: filename, sheetname = kwargs["save_to"].split(",")
         else: filename, sheetname = kwargs.get("save_to"), "sheet_001"
         if filename.endswith(".xlsx") and exist(filename):
