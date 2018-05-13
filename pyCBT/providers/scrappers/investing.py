@@ -33,7 +33,7 @@ class table_has_changed_from(object):
             return False
 
 class EconomicCalendar(object):
-    BASE_URL = "https://www.investing.com/economic-calendar/{calendar}-{id}"
+    URL = "https://www.investing.com/economic-calendar/{calendar}-{id}"
     TABLE_ID = "eventHistoryTable{id}"
     SHOW_MORE_ID = "showMoreHistory{id}"
 
@@ -53,9 +53,8 @@ class EconomicCalendar(object):
 
     def _filter_html(self):
         table = self.browser.find_element(By.ID, self.TABLE_ID.format(id=self.id))
-        date_str = table.find_element_by_css_selector("tbody tr:last-child td").text
         date = parse_tz(
-            datetime_str=date_str,
+            datetime_str=table.find_element_by_css_selector("tbody tr:last-child td").text,
             in_tz=self.timezone,
             remove_pattern=r"\(Q\d\)",
             replace_pattern=(r"^\w{3}", r"\(\w{3}\)")
@@ -65,16 +64,17 @@ class EconomicCalendar(object):
     def _parse_units(self, series):
         """Returns a dataframe with numeric column.
         """
-        mult = {
+        unit = {
             "K": 1000.0,
             "M": 1000000.0,
             "%": 1.0
         }
-        series = series.apply(lambda cell: locale.atof(cell.strip(cell[-1]))*mult.get(cell[-1], 1.0) if type(cell) == str else cell)
+        series = series.apply(lambda cell: locale.atof(cell.strip(cell[-1]))*unit.get(cell[-1], 1.0)
+                                if type(cell) == str else cell)
         return series
 
     def set_html_table(self):
-        self.browser.get(self.BASE_URL.format(calendar=self.calendar, id=self.id))
+        self.browser.get(self.URL.format(calendar=self.calendar, id=self.id))
 
         html_table, last_record_date = self._filter_html()
 
@@ -93,15 +93,19 @@ class EconomicCalendar(object):
         return None
 
     def as_dataframe(self, index_name="Date"):
+        # check if already defined
         if self.table: return self.table
         # parse HTML
         if not self.html_table: self.set_html_table()
 
-        table, = pd.read_html(u"<table>"+self.html_table.get_attribute("innerHTML")+u"</table>")
+        table, = pd.read_html(u"<table>{}</table>".format(self.html_table.get_attribute("innerHTML")))
         # parse dates
         table.insert(0, index_name, value=table["Release Date"]+" "+table["Time"])
         if re.search(r"\(Q\d\)", table["Release Date"][0]):
-            quarter = table["Release Date"].apply(lambda datetime_str: eval(re.findall(r"\(Q\d\)", datetime_str)[0].strip("(Q)")) if re.search(r"\(Q\d\)", datetime_str) else None)
+            quarter = table["Release Date"].apply(
+                                                lambda dt: eval(re.findall(r"\(Q\d\)", dt)[0].strip("(Q)"))
+                                                if re.search(r"\(Q\d\)", datetime_str) else None
+            )
             table.insert(loc=1, column="Quarter", value=quarter)
         table[index_name] = table[index_name].apply(
             timezone_shift,
@@ -109,22 +113,20 @@ class EconomicCalendar(object):
                 self.timezone,
                 self.timezone,
                 self.datetime_format,
-                r"\(Q\d\)",
-                (
-                    r"^\w{3}",
-                    r"\(\w{3}\)"
-                )
+                r"\(Q\d\)", (r"^\w{3}",r"\(\w{3}\)")
             )
         )
         # insert better
-        better = map(lambda span: "better" in span.get_attribute("title").lower() if span.get_attribute("title").strip() else None, self.html_table.find_elements_by_css_selector("tbody tr td:nth-child(3) span"))
+        better = map(lambda span: "better" in span.get_attribute("title").lower()
+                        if span.get_attribute("title").strip()
+                        else None, self.html_table.find_elements_by_css_selector("tbody tr td:nth-child(3) span"))
         table.insert(table.columns.size, "Better", value=better)
         # filter by date range & cleaning
-        mask = [not (self.from_date <= parse_tz(rd, in_tz=self.timezone) <= self.to_date) for rd in table["Date"]]
+        mask = [not (self.from_date <= parse_tz(rd, in_tz=self.timezone) <= self.to_date) for rd in table[index_name]]
         table.drop(table.index[mask], axis="index", inplace=True)
         table.drop(["Release Date", "Time", "Unnamed: 5"], axis="columns", inplace=True)
         # set index
-        table.set_index("Date", inplace=True)
+        table.set_index(index_name, inplace=True)
         table.sort_index(inplace=True)
 
         self.table = table.apply(self._parse_units)
