@@ -104,7 +104,7 @@ class EconomicCalendar(object):
         if re.search(r"\(Q\d\)", table["Release Date"][0]):
             quarter = table["Release Date"].apply(
                                                 lambda dt: eval(re.findall(r"\(Q\d\)", dt)[0].strip("(Q)"))
-                                                if re.search(r"\(Q\d\)", datetime_str) else None
+                                                if re.search(r"\(Q\d\)", dt) else None
             )
             table.insert(loc=1, column="Quarter", value=quarter)
         table[index_name] = table[index_name].apply(
