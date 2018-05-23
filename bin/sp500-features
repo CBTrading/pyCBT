@@ -7,18 +7,26 @@ import locale
 import re
 
 from collections import OrderedDict
-from pyCBT.common.timezone import timezone_shift
+from pyCBT.common.timezone import parse_tz
 
-def _remove_pattern(cell, pattern=r"\(\w+\)"):
-    m = re.findall(pattern, cell)
+def _parse_dates(cell):
+    """Returns the parsed dates formatted as %Y-%m-%d.
+    """
+    m = re.findall(r"\(\w+\)", cell)
     if m: cell = cell.replace(m.pop(), "")
+    cell = parse_tz(datetime_str=cell, in_tz="America/New_York").strftime("%Y-%m-%d")
     return cell
 
-def _parse_units(series, **kwargs):
+def _parse_units(cell):
     """Returns a dataframe with numeric column.
     """
-    series = series.apply(lambda cell: locale.atof(cell.strip(cell[-1]))*kwargs.get(cell[-1], 1.0) if type(cell) == str else cell)
-    return series
+    units = {
+        "K": 1000.0,
+        "M": 1000000.0,
+        "%": 1.0
+    }
+    cell = locale.atof(cell[:-1])*units.get(cell.strip()[-1], 1.0) if hasattr(cell, "strip") else cell
+    return cell
 
 base_url = "https://www.investing.com/{category}/{value}"
 
@@ -33,14 +41,8 @@ sp500, = pd.read_html(
     index_col="Date",
     parse_dates=True
 )
-sp500.sort_index(inplace=True)
-index = sp500.index.copy()
+index = sp500.index.sort_values()
 
-units = {
-    "K": 1000.0,
-    "M": 1000000.0,
-    "%": 1.0
-}
 names = [
     "S&P 500",
     "DAX",
@@ -146,7 +148,7 @@ url_params = [
     {"category": "economic-calendar", "value": "cb-consumer-confidence-48"}
 ]
 features = OrderedDict(zip(names, url_params))
-tables = OrderedDict()
+features_table = pd.DataFrame(index=index, data=None)
 for feature in features:
     print feature, base_url.format(**features.get(feature))
     if features.get(feature)["category"] == "economic-calendar":
@@ -161,45 +163,40 @@ for feature in features:
         )
         # set index
         table.insert(0, "Date", value=table["Release Date"]+" "+table["Time"])
-        table["Date"] = table["Date"].apply(_remove_pattern)
-        table["Date"] = table["Date"].apply(
-        timezone_shift,
-            args=(
-                "America/New_York",
-                "America/New_York",
-                "%Y-%m-%d"
-            )
-        )
+        table["Date"] = table["Date"].apply(_parse_dates)
         table.set_index("Date", inplace=True)
         table.index = pd.to_datetime(table.index)
         table.sort_index(inplace=True)
         table.ffill(inplace=True)
         # clean table
         table = table.get("Actual")
-        table = table.apply(lambda x: locale.atof(x[:-1])*units.get(x.strip()[-1], 1.0) if hasattr(x, "strip") else x)
+        table = table.apply(_parse_units)
         # verify time sampling
         table = table.resample("BM").nearest()
         if feature == "GDP": table = table.shift(-3, freq="BM")
         table.ffill(inplace=True)
         # filter columns
-        tables[feature] = table.copy()
+        features_table[feature] = table.copy()
     else:
         response = opener.open(base_url.format(**features.get(feature)) + "-historical-data")
         html_table = response.read()
 
-        table, = pd.read_html(
-            io=html_table,
-            attrs={"id":"curr_table"},
-            index_col="Date",
-            parse_dates=True
-        )
+        if feature == "S&P 500":
+            table = sp500
+        else:
+            table, = pd.read_html(
+                io=html_table,
+                attrs={"id":"curr_table"},
+                index_col="Date",
+                parse_dates=True
+            )
         # filter columns
-        tables[feature] = table.get("Price")
+        features_table[feature] = table.get("Price")
     # time alignment
-    if feature == "Interest rate decision": tables[feature] = tables[feature].reindex(index, method="bfill")
-    else: tables[feature] = tables[feature].reindex(index, method="ffill")
-    tables[feature] = tables[feature].shift(periods=1, freq="B")
-    if features.get(feature)["category"] != "economic-calendar": tables[feature] = tables[feature].pct_change()
+    if feature == "Interest rate decision":
+        features_table[feature] = features_table[feature].reindex(index, method="bfill")
+    elif features.get(feature)["category"] == "economic-calendar":
+        features_table[feature] = features_table[feature].reindex(index, method="ffill")
 
-features_table = pd.DataFrame(data=tables)
-features_table.to_csv("")
+features_table.dropna(inplace=True)
+features_table.reset_index().to_excel("sp500_features.xlsx", index=False)
