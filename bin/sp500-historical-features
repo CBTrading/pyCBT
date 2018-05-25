@@ -10,15 +10,16 @@ from pyCBT.common._constants import features_params
 from pyCBT.common._helpers import dump_data
 from pyCBT.common.path import exist
 
-idate = datetime(1995, 1, 1).strftime("%Y-%m-%d")
+idate = datetime(2000, 1, 1).strftime("%Y-%m-%d")
 fdate = datetime.now(tz=pytz.timezone("America/New_York")).strftime("%Y-%m-%d")
 
 chrome = webdriver.Chrome()
 for feature in features_params:
-    print "downloading {}...".format(feature)
     if exist("{}.csv".format(features_params.get(feature)["instrument"])):
+        print "downloading {}...".format(feature)
         continue
     else:
+        print "downloading {}...".format(feature),
         if features_params.get(feature)["category"] == "economic-calendar":
             investing_data = investing.EconomicData(
                 calendar=features_params.get(feature)["instrument"],
@@ -35,6 +36,6 @@ for feature in features_params:
                 browser=chrome
             )
         table = investing_data.as_dataframe()
-
+    print table.index[0].date(), table.index[-1].date()
     dump_data(table, **{"save_to": features_params.get(feature)["instrument"]})
 chrome.close()
