@@ -32,7 +32,7 @@ class table_has_changed_from(object):
         else:
             return False
 
-class EconomicCalendar(object):
+class EconomicData(object):
     URL = "https://www.investing.com/economic-calendar/{calendar}-{id}"
     TABLE_ID = "eventHistoryTable{id}"
     SHOW_MORE_ID = "showMoreHistory{id}"
@@ -40,8 +40,8 @@ class EconomicCalendar(object):
     def __init__(self, calendar, from_date, to_date, datetime_format="%Y-%m-%d", browser=None):
         self.timezone = "America/New_York"
         self.datetime_format = datetime_format
-        self.from_date = parse_tz(from_date, in_tz=self.timezone)
-        self.to_date = parse_tz(to_date, in_tz=self.timezone)
+        self.from_date = parse_tz(from_date, in_tz=None)
+        self.to_date = parse_tz(to_date, in_tz=None)
 
         _ = calendar.split("-")
         self.calendar, self.id = string.join(_[:-1], "-"), _[-1]
@@ -51,14 +51,17 @@ class EconomicCalendar(object):
         self.html_table = None
         self.table = None
 
+    def _parse_dates(self, cell):
+        """Returns the parsed dates formatted as self.datetime_format.
+        """
+        m = re.findall(r"\(\w+\)", cell)
+        if m: cell = cell.replace(m.pop(), "")
+        cell = parse_tz(datetime_str=cell, in_tz=None)
+        return cell
+
     def _filter_html(self):
         table = self.browser.find_element(By.ID, self.TABLE_ID.format(id=self.id))
-        date = parse_tz(
-            datetime_str=table.find_element_by_css_selector("tbody tr:last-child td").text,
-            in_tz=self.timezone,
-            remove_pattern=r"\(Q\d\)",
-            replace_pattern=(r"^\w{3}", r"\(\w{3}\)")
-        )
+        date = self._parse_dates(table.find_element_by_css_selector("tbody tr:last-child td").text)
         return table, date
 
     def _parse_units(self, series):
@@ -101,20 +104,21 @@ class EconomicCalendar(object):
         table, = pd.read_html(u"<table>{}</table>".format(self.html_table.get_attribute("innerHTML")))
         # parse dates
         table.insert(0, index_name, value=table["Release Date"]+" "+table["Time"])
-        if re.search(r"\(Q\d\)", table["Release Date"][0]):
-            quarter = table["Release Date"].apply(
-                                                lambda dt: eval(re.findall(r"\(Q\d\)", dt)[0].strip("(Q)"))
-                                                if re.search(r"\(Q\d\)", dt) else None
-            )
-            table.insert(loc=1, column="Quarter", value=quarter)
-        table[index_name] = table[index_name].apply(
-            timezone_shift,
-            args=(
-                self.timezone,
-                self.timezone,
-                self.datetime_format,
-                r"\(Q\d\)", (r"^\w{3}",r"\(\w{3}\)")
-            )
+        table[index_name] = table[index_name].apply(self._parse_dates)
+        table.set_index(index_name, inplace=True)
+        table.sort_index(inplace=True)
+        # clean table
+        # print table.index.size, len(self._parse_better())
+        # table.insert(loc=table.columns.size, column="Better", value=self._parse_better())
+        table.drop(["Release Date", "Time", "Unnamed: 5"], axis="columns", inplace=True)
+        mask = [not (self.from_date <= dt <= self.to_date) for dt in table.index]
+        table.drop(table.index[mask], axis="index", inplace=True)
+        table = table.apply(self._parse_units)
+        # verify time sampling
+        table = table.resample("BM").nearest()
+        if self.calendar == "gdp": table = table.shift(-3, freq="BM")
+        self.table = table.ffill()
+        return self.table
         )
         # insert better
         better = map(lambda span: "better" in span.get_attribute("title").lower()
