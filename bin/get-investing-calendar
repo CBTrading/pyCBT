@@ -19,7 +19,7 @@ def parse_args(*args, **kwargs):
     parser.add_argument(
         "--from-date",
         help="Starting date in dataset. Defaults to first register in table.",
-        default=datetime(1000, 1, 1).isoformat()
+        default=datetime(1995, 1, 1).isoformat()
     )
     parser.add_argument(
         "--to-date",
@@ -89,7 +89,7 @@ if __name__ == "__main__":
     args, kwargs = parse_args()
 
     # retrieve calendar
-    calendar = investing.EconomicCalendar(
+    calendar = investing.EconomicData(
         calendar=kwargs.get("calendar"),
         from_date=kwargs.get("from_date"),
         to_date=kwargs.get("to_date")
