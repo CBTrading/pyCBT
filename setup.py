@@ -43,7 +43,8 @@ setup(
         "bin/cbt-config",
         "bin/get-investing-calendar",
         "bin/get-wti-candles",
-        "bin/sp500-features",
+        "bin/sp500-today-features",
+        "bin/sp500-historical-features",
         "bin/sp500-intraday"
     ],
 )

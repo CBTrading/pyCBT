@@ -1,0 +1,40 @@
+#!/usr/bin/env python
+
+import pytz
+from datetime import datetime
+
+from selenium import webdriver
+
+from pyCBT.providers.scrappers import investing
+from pyCBT.common._constants import features_params
+from pyCBT.common._helpers import dump_data
+from pyCBT.common.path import exist
+
+idate = datetime(1995, 1, 1).strftime("%Y-%m-%d")
+fdate = datetime.now(tz=pytz.timezone("America/New_York")).strftime("%Y-%m-%d")
+
+chrome = webdriver.Chrome()
+for feature in features_params:
+    print "downloading {}...".format(feature)
+    if exist("{}.csv".format(features_params.get(feature)["instrument"])):
+        continue
+    else:
+        if features_params.get(feature)["category"] == "economic-calendar":
+            investing_data = investing.EconomicData(
+                calendar=features_params.get(feature)["instrument"],
+                from_date=idate,
+                to_date=fdate,
+                browser=chrome
+            )
+        else:
+            investing_data = investing.FinancialData(
+                category=features_params.get(feature)["category"],
+                instrument=features_params.get(feature)["instrument"],
+                from_date=idate,
+                to_date=fdate,
+                browser=chrome
+            )
+        table = investing_data.as_dataframe()
+
+    dump_data(table, **{"save_to": features_params.get(feature)["instrument"]})
+chrome.close()
