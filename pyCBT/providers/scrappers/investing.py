@@ -76,6 +76,15 @@ class EconomicData(object):
                                 if type(cell) == str else cell)
         return series
 
+    # TODO: review this method: is returning more elements than in actual index table
+    def _parse_better(self):
+        """Returns a list containing the better/worse column.
+        """
+        better = map(lambda span: "better" in span.get_attribute("title").lower()
+                        if span.get_attribute("title").strip()
+                        else None, self.html_table.find_elements_by_css_selector("tbody tr td:nth-child(3) span"))
+        return better
+
     def set_html_table(self):
         self.browser.get(self.URL.format(calendar=self.calendar, id=self.id))
 
@@ -119,19 +128,80 @@ class EconomicData(object):
         if self.calendar == "gdp": table = table.shift(-3, freq="BM")
         self.table = table.ffill()
         return self.table
+
+class FinancialData(object):
+    URL = "https://www.investing.com/{category}/{instrument}-historical-data"
+
+    def __init__(self, category, instrument, from_date, to_date, datetime_format="%Y-%m-%d", browser=None):
+        self.timezone = "America/New_York"
+        self.datetime_format = datetime_format
+        self.category = category
+        self.instrument = instrument
+        self.from_date = parse_tz(from_date, in_tz=None)
+        self.to_date = parse_tz(to_date, in_tz=None)
+
+        self.browser = webdriver.Chrome() if not browser else browser
+        self.browser.get(self.URL.format(category=self.category, instrument=self.instrument))
+
+        self._html_table = None
+        self.table = None
+
+    def _filter_html(self, wait):
+        return table, date, start_date_field, end_date_field, apply_date_btn
+
+    def _parse_units(self, series):
+        """Returns a dataframe with numeric column.
+        """
+        unit = {
+            "K": 1000.0,
+            "M": 1000000.0,
+            "%": 1.0
+        }
+        series = series.apply(lambda cell: locale.atof(cell.strip(cell[-1]))*unit.get(cell[-1], 1.0)
+                                if hasattr(cell, "strip") else cell)
+        return series
+
+    def set_html_table(self):
+        html_table = self.browser.find_element(By.ID, "curr_table")
+        last_record_date = parse_tz(
+            datetime_str=html_table.find_element_by_css_selector("tbody tr:last-child td").text,
+            in_tz=None
         )
-        # insert better
-        better = map(lambda span: "better" in span.get_attribute("title").lower()
-                        if span.get_attribute("title").strip()
-                        else None, self.html_table.find_elements_by_css_selector("tbody tr td:nth-child(3) span"))
-        table.insert(table.columns.size, "Better", value=better)
-        # filter by date range & cleaning
-        mask = [not (self.from_date <= parse_tz(rd, in_tz=self.timezone) <= self.to_date) for rd in table[index_name]]
+        if last_record_date > self.from_date:
+            date_range_button = self.browser.find_element(By.ID, "widgetFieldDateRange")
+            # date_range_button.click()
+            self.browser.execute_script("arguments[0].click();", date_range_button)
+
+            start_date_field = self.browser.find_element(By.ID, "startDate")
+            start_date_field.clear()
+            start_date_field.send_keys(self.from_date.strftime("%m/%d/%Y"))
+            end_date_field = self.browser.find_element(By.ID, "endDate")
+            end_date_field.clear()
+            end_date_field.send_keys(self.to_date.strftime("%m/%d/%Y"))
+            apply_date_btn = self.browser.find_element(By.ID, "applyBtn")
+            # apply_date_btn.click()
+            self.browser.execute_script("arguments[0].click();", apply_date_btn)
+
+            wait = WebDriverWait(self.browser, 10)
+            html_table = wait.until(EC.presence_of_element_located((By.ID, "curr_table")))
+
+        self._html_table = html_table
+
+        return None
+
+    def as_dataframe(self, index_name="Date"):
+        if self.table: return self.table
+        if not self._html_table: self.set_html_table()
+
+        table, = pd.read_html(u"<table>{}</table>".format(self._html_table.get_attribute("innerHTML")))
+        table[index_name] = pd.to_datetime(table[index_name])
+
+        mask = [not (self.from_date <= dt <= self.to_date) for dt in table[index_name]]
         table.drop(table.index[mask], axis="index", inplace=True)
-        table.drop(["Release Date", "Time", "Unnamed: 5"], axis="columns", inplace=True)
-        # set index
         table.set_index(index_name, inplace=True)
         table.sort_index(inplace=True)
 
-        self.table = table.apply(self._parse_units)
-        return self.table
+        table.rename({"Price": "Close", "Vol.": "Volume", "Change %": "Return"}, axis="columns", inplace=True)
+        table.replace({"Volume": {"-": 0.0}}, inplace=True)
+        table = table.apply(self._parse_units)
+        return table
