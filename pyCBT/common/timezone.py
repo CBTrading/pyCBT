@@ -9,22 +9,10 @@ from datetime import datetime, timedelta
 # TODO: implement parser as a decorator
 # TODO: implement checking if datetime_str is JSON or UNIX
 # TODO: time parsing will break when replacing months with different number of days
-def parse_tz(datetime_str=None, in_tz="America/New_York"):#, remove_pattern=None, replace_pattern=None):
+def parse_tz(datetime_str=None, in_tz="America/New_York"):
     if datetime_str is None:
-        dt = datetime.now(tz=pytz.timezone(in_tz))
+        dt = datetime.now(tz=pytz.timezone(in_tz) if in_tz is not None else in_tz)
     else:
-        # if replace_pattern:
-        #     m1 = re.findall(replace_pattern[0], datetime_str)
-        #     m2 = re.findall(replace_pattern[1], datetime_str)
-        #     if m2:
-        #         _ = m2.pop()
-        #         datetime_str = datetime_str.replace(_, "")
-        #         datetime_str = datetime_str.replace(m1.pop(), _.strip("()"))
-        #         datetime_str = datetime_str.strip()
-        # if remove_pattern:
-        #     m = re.findall(remove_pattern, datetime_str)
-        #     if m:
-        #         datetime_str = datetime_str.replace(m.pop(), "")
         try:
             dt = parse(datetime_str)
         except ValueError:
@@ -33,12 +21,12 @@ def parse_tz(datetime_str=None, in_tz="America/New_York"):#, remove_pattern=None
             except ValueError:
                 raise ValueError("Unknown datetime format for {}.".format(datetime_str))
 
-    if dt.tzinfo is None: dt = pytz.timezone(in_tz).localize(dt, is_dst=False)
+    if dt.tzinfo is None and in_tz is not None: dt = pytz.timezone(in_tz).localize(dt, is_dst=False)
 
     return dt
 
 # TODO: check if need to parse or if datetime is already a datetime object
-def timezone_shift(datetime_str=None, in_tz="America/New_York", out_tz="UTC", fmt="RFC3339"):#, remove_pattern=None, replace_pattern=None):
+def timezone_shift(datetime_str=None, in_tz="America/New_York", out_tz="UTC", fmt="RFC3339"):
     """Turns a datetime string from one timezone to another in a given format
 
     Given a datetime string in a timezone 'in_tz', this function performs the
