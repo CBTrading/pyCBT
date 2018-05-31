@@ -70,6 +70,7 @@ class EconomicData(object):
         unit = {
             "K": 1000.0,
             "M": 1000000.0,
+            "B": 1000000.0*1000,
             "%": 1.0
         }
         series = series.apply(lambda cell: locale.atof(cell.strip(cell[-1]))*unit.get(cell[-1], 1.0)
@@ -132,11 +133,12 @@ class EconomicData(object):
 class FinancialData(object):
     URL = "https://www.investing.com/{category}/{instrument}-historical-data"
 
-    def __init__(self, category, instrument, from_date, to_date, datetime_format="%Y-%m-%d", browser=None):
+    def __init__(self, category, instrument, resolution, from_date, to_date, datetime_format="%Y-%m-%d", browser=None):
         self.timezone = "America/New_York"
         self.datetime_format = datetime_format
         self.category = category
         self.instrument = instrument
+        self.resolution = resolution
         self.from_date = parse_tz(from_date, in_tz=None)
         self.to_date = parse_tz(to_date, in_tz=None)
 
@@ -162,14 +164,22 @@ class FinancialData(object):
         return series
 
     def set_html_table(self):
-        html_table = self.browser.find_element(By.ID, "curr_table")
+        wait = WebDriverWait(self.browser, 10)
+        if self.resolution != "Daily":
+            time_frame = self.browser.find_element(By.ID, "data_interval")
+            options = time_frame.find_elements(By.TAG_NAME, "option")
+            for option in options:
+                if option.get_attribute("value") == self.resolution:
+                    option.click()
+                    break
+
+        html_table = wait.until(EC.presence_of_element_located((By.ID, "curr_table")))
         last_record_date = parse_tz(
             datetime_str=html_table.find_element_by_css_selector("tbody tr:last-child td").text,
             in_tz=None
         )
         if last_record_date > self.from_date:
             date_range_button = self.browser.find_element(By.ID, "widgetFieldDateRange")
-            # date_range_button.click()
             self.browser.execute_script("arguments[0].click();", date_range_button)
 
             start_date_field = self.browser.find_element(By.ID, "startDate")
@@ -179,7 +189,6 @@ class FinancialData(object):
             end_date_field.clear()
             end_date_field.send_keys(self.to_date.strftime("%m/%d/%Y"))
             apply_date_btn = self.browser.find_element(By.ID, "applyBtn")
-            # apply_date_btn.click()
             self.browser.execute_script("arguments[0].click();", apply_date_btn)
 
             wait = WebDriverWait(self.browser, 10)
@@ -194,7 +203,10 @@ class FinancialData(object):
         if not self._html_table: self.set_html_table()
 
         table, = pd.read_html(u"<table>{}</table>".format(self._html_table.get_attribute("innerHTML")))
-        table[index_name] = pd.to_datetime(table[index_name])
+        if self.resolution == "Monthly":
+            table["Date"] = pd.to_datetime(table["Date"], format="%b %y", exact=True)
+        else:
+            table["Date"] = pd.to_datetime(table["Date"])
 
         mask = [not (self.from_date <= dt <= self.to_date) for dt in table[index_name]]
         table.drop(table.index[mask], axis="index", inplace=True)
