@@ -214,6 +214,6 @@ class FinancialData(object):
         table.sort_index(inplace=True)
 
         table.rename({"Price": "Close", "Vol.": "Volume", "Change %": "Return"}, axis="columns", inplace=True)
-        table.replace({"Volume": {"-": 0.0}}, inplace=True)
+        table.replace({"Volume": {"-": None}}, inplace=True)
         table = table.apply(self._parse_units)
         return table
