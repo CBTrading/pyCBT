@@ -28,28 +28,32 @@ args = parser.parse_args()
 
 chrome = webdriver.Chrome()
 for feature in features_params:
-    if exist("{}.csv".format(features_params.get(feature)["instrument"])):
-        print "downloading {}...".format(feature)
-        continue
+    print "downloading {}...".format(feature),
+    if features_params.get(feature)["category"] == "economic-calendar":
+        filename = "{}.csv".format(features_params.get(feature)["instrument"])
+        if exist(filename):
+            print "done"
+            continue
+        investing_data = investing.EconomicData(
+            calendar=features_params.get(feature)["instrument"],
+            from_date=idate,
+            to_date=fdate,
+            browser=chrome
+        )
     else:
-        print "downloading {}...".format(feature),
-        if features_params.get(feature)["category"] == "economic-calendar":
-            investing_data = investing.EconomicData(
-                calendar=features_params.get(feature)["instrument"],
-                from_date=idate,
-                to_date=fdate,
-                browser=chrome
-            )
-        else:
-            investing_data = investing.FinancialData(
-                category=features_params.get(feature)["category"],
-                instrument=features_params.get(feature)["instrument"],
-                resolution=args.resolution,
-                from_date=idate,
-                to_date=fdate,
-                browser=chrome
-            )
-        table = investing_data.as_dataframe()
+        filename = "{}-{}.csv".format(args.resolution.lower(), features_params.get(feature)["instrument"])
+        if exist(filename):
+            print "done"
+            continue
+        investing_data = investing.FinancialData(
+            category=features_params.get(feature)["category"],
+            instrument=features_params.get(feature)["instrument"],
+            resolution=args.resolution,
+            from_date=idate,
+            to_date=fdate,
+            browser=chrome
+        )
+    table = investing_data.as_dataframe()
     print table.index[0].date(), table.index[-1].date()
-    dump_data(table, **{"save_to": features_params.get(feature)["instrument"]})
+    dump_data(table, **{"save_to": filename})
 chrome.close()
