@@ -174,8 +174,9 @@ class FinancialData(object):
                 if option.get_attribute("value") == self.resolution:
                     option.click()
                     break
-
-        html_table = wait.until(EC.presence_of_element_located((By.ID, "curr_table")))
+            html_table = wait.until(EC.presence_of_element_located((By.ID, "curr_table")))
+        else:
+            html_table = self.browser.find_element(By.ID, "curr_table")
         last_record_date = parse_tz(
             datetime_str=html_table.find_element_by_css_selector("tbody tr:last-child td").text,
             in_tz=None
