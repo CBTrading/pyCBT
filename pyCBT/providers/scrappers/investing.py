@@ -157,6 +157,7 @@ class FinancialData(object):
         unit = {
             "K": 1000.0,
             "M": 1000000.0,
+            "B": 1000000.0*1000,
             "%": 1.0
         }
         series = series.apply(lambda cell: locale.atof(cell.strip(cell[-1]))*unit.get(cell[-1], 1.0)
@@ -165,6 +166,7 @@ class FinancialData(object):
 
     def set_html_table(self):
         wait = WebDriverWait(self.browser, 10)
+
         if self.resolution != "Daily":
             time_frame = self.browser.find_element(By.ID, "data_interval")
             options = time_frame.find_elements(By.TAG_NAME, "option")
