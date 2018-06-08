@@ -1,7 +1,6 @@
 from collections import OrderedDict
 
-
-indices_symbols = [
+financial_symbols = [
     "S&P 500",
     "DAX",
     "DJA",
@@ -16,9 +15,7 @@ indices_symbols = [
     "SSE",
     "VIX",
     "VXN",
-    "VXO"
-]
-sp500_sectors_symbols = [
+    "VXO",
     "Consumer disc.",
     "Consumer stap.",
     "Energy",
@@ -28,9 +25,7 @@ sp500_sectors_symbols = [
     "Inf. tech.",
     "Materials",
     "Real state",
-    "Utilities"
-]
-stocks_symbols = [
+    "Utilities",
     "AAPL",
     "AMZN",
     "BRK-B",
@@ -39,13 +34,9 @@ stocks_symbols = [
     "JNJ",
     "JPM",
     "MSFT",
-    "XOM"
-]
-commodities_symbols = [
+    "XOM",
     "Crude oil",
-    "Gold"
-]
-currencies_symbols = [
+    "Gold",
     "EURUSD",
     "GBPUSD",
     "USDCAD",
@@ -63,12 +54,7 @@ economical_symbols = [
     "PPI",
     "Unemployment rate"
 ]
-indicator_types = ["Indices"]*len(indices_symbols) +
-                  ["S&P 500 sectors"]*len(sp500_sectors_symbols) +
-                  ["Stocks"]*len(stocks_symbols) +
-                  ["Commodities"]*len(commodities_symbols) +
-                  ["Economical"]*len(economical_symbols)
-investing_params = [
+url_params = [
     {"category": "indices", "instrument": "us-spx-500"},
     {"category": "indices", "instrument": "germany-30"},
     {"category": "indices", "instrument": "dj-composite-average"},
@@ -120,11 +106,11 @@ investing_params = [
     {"category": "economic-calendar", "instrument": "ppi-238"},
     {"category": "economic-calendar", "instrument": "unemployment-rate-300"}
 ]
-all_symbols = indices_symbols + sp500_sectors_symbols + stocks_symbols + commodities_symbols + currencies_symbols + economical_symbols
-features_params = OrderedDict(zip(all_symbols, investing_params))
-features_types = OrderedDict(zip(all_symbols, indicator_types))
+indicator_names = financial_symbols + economical_symbols
+features_params = OrderedDict(zip(indicator_names, url_params))
+features_types = OrderedDict(zip(indicator_names, indicator_types))
 
 extra_columns = ["Class", "Year", "Month", "DayWeek"]
-return_names = map(lambda symbol: "{} return".format(symbol), indices_symbols + sp500_sectors_symbols + stocks_symbols + commodities_symbols + currencies_symbols)
-features_names_price = all_symbols
-features_names_return = return_names + economical_symbols
+return_names = map(lambda symbol: "{} return".format(symbol), financial_symbols)
+features_names_price = financial_symbols + economical_symbols
+features_names_return =  return_names + economical_symbols
