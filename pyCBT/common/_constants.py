@@ -108,7 +108,6 @@ url_params = [
 ]
 indicator_names = financial_symbols + economical_symbols
 features_params = OrderedDict(zip(indicator_names, url_params))
-features_types = OrderedDict(zip(indicator_names, indicator_types))
 
 extra_columns = ["Class", "Year", "Month", "DayWeek"]
 return_names = map(lambda symbol: "{} return".format(symbol), financial_symbols)
