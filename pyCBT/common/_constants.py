@@ -63,10 +63,10 @@ economical_symbols = [
     "PPI",
     "Unemployment rate"
 ]
-indicator_types = ["Indices"]*len(indices_symbols) +
-                  ["S&P 500 sectors"]*len(sp500_sectors_symbols) +
-                  ["Stocks"]*len(stocks_symbols) +
-                  ["Commodities"]*len(commodities_symbols) +
+indicator_types = ["Indices"]*len(indices_symbols) +\
+                  ["S&P 500 sectors"]*len(sp500_sectors_symbols) +\
+                  ["Stocks"]*len(stocks_symbols) +\
+                  ["Commodities"]*len(commodities_symbols) +\
                   ["Economical"]*len(economical_symbols)
 investing_params = [
     {"category": "indices", "instrument": "us-spx-500"},
