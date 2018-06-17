@@ -317,6 +317,7 @@ class Config(object):
         # return file content in dictionary
         return summary
 
+# TODO: take as input the config object (optional)
 class Client(object):
     """Create an API client for OANDA crendentials given a account ID.
 

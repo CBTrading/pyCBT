@@ -12,6 +12,8 @@ from pyCBT.common._constants import features_params
 from pyCBT.common._helpers import dump_data
 from pyCBT.common.path import exist
 
+# TODO: add list of instruments/assets as command line argument
+
 idate = datetime(2000, 1, 1).strftime("%Y-%m-%d")
 fdate = datetime.now(tz=pytz.timezone("America/New_York")).strftime("%Y-%m-%d")
 
