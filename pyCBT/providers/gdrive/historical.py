@@ -89,6 +89,7 @@ class DriveTables(object):
                 )
         return tables
 
+    # TODO: split this method into three: get_technical, get_prices, get_returns
     def get_features(self, lag_periods=1, ti_periods=5):
         """Returns features table."""
 
@@ -101,7 +102,7 @@ class DriveTables(object):
         # extract columns from raw data
         # initialize columns list
         tables = []
-        for category in set(map(lambda p: self.symbols.get(p)["category"], self.symbols)):
+        for category in set(map(lambda s: self.symbols.get(s)["category"], self.symbols)):
             category_name = category.replace("-", " ").capitalize()
             # extract symbols of current catagory
             cat_symbols = filter(lambda s: self.symbols.get(s)["category"] == category, self.symbols)
