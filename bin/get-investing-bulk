@@ -10,6 +10,7 @@ import pytz
 import argparse
 
 from datetime import datetime
+from string import join
 
 from selenium import webdriver
 
@@ -25,7 +26,7 @@ parser = argparse.ArgumentParser()
 
 parser.add_argument(
     "symbols_list",
-    metavar="symbols-list",
+    metavar="path",
     help="File containing the symbols list. The file should be formatted in two columns: symbol name and investing link."
 )
 parser.add_argument(
@@ -49,12 +50,11 @@ else:
             symbol, url = line.split(",")
             line = f.readline()[:-1]
             # remove domain
-            if "https" in url: investing_params = url.replace("https://www.investing.com/").split("/")
-            else: investing_params = url.replace("www.investing.com/").split("/")
+            if "https" in url: investing_params = url.replace("https://www.investing.com/", "").split("/")
+            else: investing_params = url.replace("www.investing.com/", "").split("/")
             # parse category and instrument
-            if len(investing_params) > 2:
-                category = investing_params[:-1].join("/")
-                instrument = investing_params[-1].strip("/")
+            category = join(investing_params[:-1], "/")
+            instrument = investing_params[-1].strip("/")
             # define features parameters
             features_params[symbol] = dict(category=category, instrument=instrument)
 
@@ -66,29 +66,29 @@ for feature in features_params:
     instrument = features_params.get(feature)["instrument"]
 
     if category == "economic-data":
-        filename = "{}_{}.csv".format(category, instrument)
+        filename = "{}_{}.csv".format(category.replace("/", "-"), feature)
         if exist(filename):
             print "done"
             continue
-            investing_data = investing.EconomicData(
+        investing_data = investing.EconomicData(
             calendar=instrument,
             from_date=idate,
             to_date=fdate,
             browser=chrome
-            )
+        )
     else:
-        filename = "{}_{}_{}.csv".format(category, args.resolution.lower(), instrument)
+        filename = "{}_{}_{}.csv".format(category.replace("/", "-"), args.resolution.lower(), feature)
         if exist(filename):
             print "done"
             continue
-            investing_data = investing.FinancialData(
+        investing_data = investing.FinancialData(
             category=category,
             instrument=instrument,
             resolution=args.resolution,
             from_date=idate,
             to_date=fdate,
             browser=chrome
-            )
+        )
 
     table = investing_data.as_dataframe()
     print table.index[0].date(), table.index[-1].date()
