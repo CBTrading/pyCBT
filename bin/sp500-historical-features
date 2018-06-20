@@ -31,30 +31,35 @@ args = parser.parse_args()
 chrome = webdriver.Chrome()
 for feature in features_params:
     print "downloading {}...".format(feature),
-    if features_params.get(feature)["category"] == "economic-calendar":
-        filename = "{}.csv".format(features_params.get(feature)["instrument"])
+
+    category = features_params.get(feature)["category"]
+    instrument = features_params.get(feature)["instrument"]
+
+    if category == "economic-data":
+        filename = "{}_{}.csv".format(category, instrument)
         if exist(filename):
             print "done"
             continue
-        investing_data = investing.EconomicData(
-            calendar=features_params.get(feature)["instrument"],
+            investing_data = investing.EconomicData(
+            calendar=instrument,
             from_date=idate,
             to_date=fdate,
             browser=chrome
-        )
+            )
     else:
-        filename = "{}-{}.csv".format(args.resolution.lower(), features_params.get(feature)["instrument"])
+        filename = "{}_{}_{}.csv".format(category, args.resolution.lower(), instrument)
         if exist(filename):
             print "done"
             continue
-        investing_data = investing.FinancialData(
-            category=features_params.get(feature)["category"],
-            instrument=features_params.get(feature)["instrument"],
+            investing_data = investing.FinancialData(
+            category=category,
+            instrument=instrument,
             resolution=args.resolution,
             from_date=idate,
             to_date=fdate,
             browser=chrome
-        )
+            )
+
     table = investing_data.as_dataframe()
     print table.index[0].date(), table.index[-1].date()
     dump_data(table, **{"save_to": filename})
