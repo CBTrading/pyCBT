@@ -14,7 +14,7 @@ class DriveTables(object):
     # parent ID of data tables in Google Drive
     RESOLUTIONS = ["daily", "weekly", "monthly"]
 
-    def __init__(self, symbols, reference, resolution="daily", client=None, drive_data_id="1etaxbcHUa8YKiNw0tEkIyMtnC8DShRxQ"):
+    def __init__(self, reference, resolution="daily", client=None, drive_data_id="1etaxbcHUa8YKiNw0tEkIyMtnC8DShRxQ"):
         if resolution not in self.RESOLUTIONS:
             raise ValueError, "{} not in resolution valid values: {}".format(resolution, string.join(self.RESOLUTIONS, ", "))
         # authenticate user & start Google Drive client
@@ -25,77 +25,72 @@ class DriveTables(object):
         else:
             self.client = client
 
+        # initialize object attributes
+        self.ref_symbol = reference
         self.resolution = resolution
         self.DATA_ID = drive_data_id
         self.PICKLE = "gdrive-{}.p".format(self.DATA_ID)
         # initialize files list from Google Drive
-        self.filenames = {}
+        self.files = {}
         for file in self.client.ListFile({"q": "'{}' in parents".format(self.DATA_ID)}).GetList():
-            self.filenames[file.get("title")] = file.get("id")
+            filename = file.get("title")
+            category, resolution, symbol = self._parse_filename(filename)
+            if resolution != self.resolution: continue
+            self.files[symbol] = dict(category=category, id=file.get("id"))
 
-        # initialize object attributes
-        self.all_symbols = symbols
-        self.ref_symbol = reference
+        if self.ref_symbol not in self.files:
+            raise ValueError, "Symbol '{}' not found.".format(self.ref_symbol)
+
         # download tables
         if exist(self.PICKLE):
-            self.ref_dataframe, self.all_dataframes = pk.load(open(self.PICKLE, "rb"))
+            self.all_dataframes = pk.load(open(self.PICKLE, "rb"))
         else:
-            self.ref_dataframe = self._download_ref_data()
-            self.all_dataframes = self._download_all_data()
-            pk.dump((self.ref_dataframe, self.all_dataframes), open(self.PICKLE, "wb"))
+            self.all_dataframes = self._download_tables()
+            pk.dump((self.all_dataframes), open(self.PICKLE, "wb"))
 
         # initialize joint dataframe
         self.joint_dataframe = None
 
-    def _get_filename(self, symbol):
-        """Returns filename corresponding to given symbol."""
-        if self.all_symbols.get(symbol)["category"] == "economic-calendar":
-            return "{}.csv".format(self.all_symbols.get(symbol)["instrument"])
-        else:
-            return "{}-{}.csv".format(self.resolution, self.all_symbols.get(symbol)["instrument"])
+    def _parse_filename(self, filename):
+        """Returns category, resolution and symbol corresponding to given filename."""
+        return filename.replace(".csv", "").split("_")
 
-    def _get_category(self, symbol):
-        """Returns category of given symbol."""
-        category = self.all_symbols.get(symbol)["category"]
+    def _parse_category(self, **kwargs):
+        """Returns category name of given symbol or raw category."""
+        if "category" in kwargs:
+            category = kwargs.get("category")
+        elif "symbol" in kwargs:
+            category = self.files[kwargs.get("symbol")]["category"]
+        else:
+            raise ValueError, "This method can take one of two possible arguments: category or symbol."
+
         category = category.replace("-", " ")
         category = category.capitalize()
+
         return category
 
-    def _download_ref_data(self):
-        """Downloads reference symbol"""
-        _id = self.filenames.get(self._get_filename(self.ref_symbol))
-        reference_table = pd.read_csv(
-            filepath_or_buffer=io.StringIO(self.client.CreateFile({"id":_id}).GetContentString().decode("utf-8")),
-            index_col="Date",
-            parse_dates=True
-        )
-        return reference_table
-
-    def _download_all_data(self):
+    def _download_tables(self):
         """Downloads other symbols from symbols' dictionary."""
         tables = {}
-        for symbol in self.all_symbols:
-            print "downloading... \t{}".format(symbol)
-            _id = self.filenames.get(self._get_filename(symbol))
-            if symbol == self.ref_symbol:
-                tables[symbol] = self.ref_dataframe.get("Close")
-            else:
-                tables[symbol] = pd.read_csv(
-                    filepath_or_buffer=io.StringIO(self.client.CreateFile({"id":_id}).GetContentString().decode("utf-8")),
-                    index_col="Date",
-                    parse_dates=True,
-                    usecols=("Date", ("Actual" if self.all_symbols.get(symbol)["category"] == "economic-calendar" else "Close"),)
-                )
+        for symbol in self.files:
+            print "downloading...\t{}".format(symbol)
+
+            _id = self.files[symbol]["id"]
+            tables[symbol] = pd.read_csv(
+                filepath_or_buffer=io.StringIO(self.client.CreateFile({"id": _id}).GetContentString().decode("utf-8")),
+                index_col="Date",
+                parse_dates=True
+            )
         return tables
 
     def get_technical(self, indicators={"EMA": EMA, "MA": MA, "WMA": WMA, "%R": WILLR, "CCI": CCI, "MOM": MOM, "ROC": ROC, "RSI": RSI}, periods=5):
         """Returns technical indicators for reference symbol."""
         # make a copy of reference table to handle TaLib functions
-        df = self.ref_dataframe.copy()
+        df = self.all_dataframes[self.ref_symbol].copy()
         df.rename(str.lower, axis="columns", inplace=True)
 
         table = pd.DataFrame(
-            index=self.ref_dataframe.index.copy(),
+            index=df.index.copy(),
             columns=pd.MultiIndex.from_tuples(
                 tuples=list(it.product(["Technical"], sorted(indicators.keys()))),
                 names=["Category", "Name"]
@@ -110,22 +105,24 @@ class DriveTables(object):
     def get_joint_dataframe(self):
         """Returns joint table with all symbols."""
         if self.joint_dataframe is not None: return self.joint_dataframe
+        # define reference index
+        ref_index = self.all_dataframes[self.ref_symbol].index
         # initialize columns list
         tables = []
-        for category in set(map(lambda s: self.all_symbols.get(s)["category"], self.all_symbols)):
-            category_name = category.replace("-", " ").capitalize()
-            # extract symbols of current catagory
-            cat_symbols = sorted(filter(lambda s: self.all_symbols.get(s)["category"] == category, self.all_symbols))
+        for category in set(map(lambda s: self.files[s]["category"], self.files)):
+            category_name = self._parse_category(category=category)
+            # extract symbols of current category
+            cat_symbols = sorted(filter(lambda s: self.files[s]["category"] == category, self.files))
             # fill tables list with symbols of current category
             table = pd.DataFrame(
-                index=self.ref_dataframe.index.copy(),
+                index=ref_index,
                 columns=pd.MultiIndex.from_tuples(
                     tuples=list(it.product([category_name], cat_symbols)),
                     names=["Category", "Name"]
                 ),
                 data=None
             )
-            for symbol in cat_symbols: table[category_name, symbol] = self.all_dataframes.get(symbol)
+            for symbol in cat_symbols: table[category_name, symbol] = self.all_dataframes[symbol]
             tables += [table]
 
         # add to tables list technical indicators from reference symbol
@@ -140,8 +137,8 @@ class DriveTables(object):
         """Returns prices for the financial instruments."""
         if self.joint_dataframe is None: self.get_joint_dataframe()
 
-        symbols = filter(lambda s: self.all_symbols.get(s)["category"] != "economic-calendar", self.all_symbols)
-        symbols = map(lambda s: (self._get_category(s), s), symbols)
+        symbols = filter(lambda s: self.files[s]["category"] != "economic-calendar", self.files)
+        symbols = map(lambda s: (self._parse_category(s), s), symbols)
 
         df = self.joint_dataframe.filter(items=symbols)
         return df
@@ -150,8 +147,8 @@ class DriveTables(object):
         """Returns fraction of change for the financial instruments."""
         if self.joint_dataframe is None: self.get_joint_dataframe()
 
-        symbols = filter(lambda s: self.all_symbols.get(s)["category"] != "economic-calendar", self.all_symbols)
-        symbols = map(lambda s: (self._get_category(s), s), symbols)
+        symbols = filter(lambda s: self.files[s]["category"] != "economic-calendar", self.files)
+        symbols = map(lambda s: (self._parse_category(s), s), symbols)
 
         df = self.joint_dataframe.filter(items=symbols)
         df = df.pct_change()
@@ -161,7 +158,7 @@ class DriveTables(object):
         """Returns economic indicators."""
         if self.joint_dataframe is None: self.get_joint_dataframe()
 
-        symbols = filter(lambda s: self.all_symbols.get(s)["category"] == "economic-calendar", self.all_symbols)
+        symbols = filter(lambda s: self.files[s]["category"] == "economic-calendar", self.files)
         symbols = map(lambda s: (self._get_category(s), s), symbols)
 
         df = self.joint_dataframe.filter(items=symbols)
