@@ -18,8 +18,6 @@ class DriveTables(object):
         if resolution not in self.RESOLUTIONS:
             raise ValueError, "{} not in resolution valid values: {}".format(resolution, string.join(self.RESOLUTIONS, ", "))
         # authenticate user & start Google Drive client
-        if not reference in symbols.keys():
-            raise ValueError, "{} not in symbols list.".format(reference)
         if not client:
             self.client = get_client()
         else:
@@ -86,30 +84,32 @@ class DriveTables(object):
     def get_technical(self, indicators={"EMA": EMA, "MA": MA, "WMA": WMA, "%R": WILLR, "CCI": CCI, "MOM": MOM, "ROC": ROC, "RSI": RSI}, periods=5):
         """Returns technical indicators for reference symbol."""
         # make a copy of reference table to handle TaLib functions
-        df = self.all_dataframes[self.ref_symbol].copy()
-        df.rename(str.lower, axis="columns", inplace=True)
+        table = self.all_dataframes[self.ref_symbol].copy()
+        table.rename(str.lower, axis="columns", inplace=True)
 
-        table = pd.DataFrame(
-            index=df.index.copy(),
+        df = pd.DataFrame(
+            index=table.index,
             columns=pd.MultiIndex.from_tuples(
                 tuples=list(it.product(["Technical"], sorted(indicators.keys()))),
                 names=["Category", "Name"]
             ),
             data=None
         )
-        for name in sorted(indicators):
-            table["Technical", name] = indicators[name](df, timeperiod=periods)
-
-        return table
+        for name in sorted(indicators): df["Technical", name] = indicators[name](table, timeperiod=periods)
+        df.dropna(how="all", axis="index", inplace=True)
+        df.interpolate(method="time", limit_direction="both", inplace=True)
+        return df
 
     def get_joint_dataframe(self):
         """Returns joint table with all symbols."""
         if self.joint_dataframe is not None: return self.joint_dataframe
         # define reference index
         ref_index = self.all_dataframes[self.ref_symbol].index
+        # define sorted list of symbols
+        sorted_symbols = sorted(self.files, key=lambda s: self.files[s]["category"])
         # initialize columns list
         tables = []
-        for category in set(map(lambda s: self.files[s]["category"], self.files)):
+        for category in set(map(lambda s: self.files[s]["category"], sorted_symbols)):
             category_name = self._parse_category(category=category)
             # extract symbols of current category
             cat_symbols = sorted(filter(lambda s: self.files[s]["category"] == category, self.files))
@@ -137,8 +137,11 @@ class DriveTables(object):
         """Returns prices for the financial instruments."""
         if self.joint_dataframe is None: self.get_joint_dataframe()
 
-        symbols = filter(lambda s: self.files[s]["category"] != "economic-calendar", self.files)
-        symbols = map(lambda s: (self._parse_category(s), s), symbols)
+        # define sorted list of symbols
+        sorted_symbols = sorted(self.files, key=lambda s: self.files[s]["category"])
+
+        symbols = filter(lambda s: self.files[s]["category"] != "economic-calendar", sorted_symbols)
+        symbols = map(lambda s: (self._parse_category(symbol=s), s), symbols)
 
         df = self.joint_dataframe.filter(items=symbols)
         return df
@@ -147,18 +150,26 @@ class DriveTables(object):
         """Returns fraction of change for the financial instruments."""
         if self.joint_dataframe is None: self.get_joint_dataframe()
 
-        symbols = filter(lambda s: self.files[s]["category"] != "economic-calendar", self.files)
-        symbols = map(lambda s: (self._parse_category(s), s), symbols)
+        # define sorted list of symbols
+        sorted_symbols = sorted(self.files, key=lambda s: self.files[s]["category"])
+
+        symbols = filter(lambda s: self.files[s]["category"] != "economic-calendar", sorted_symbols)
+        symbols = map(lambda s: (self._parse_category(symbol=s), s), symbols)
 
         df = self.joint_dataframe.filter(items=symbols)
         df = df.pct_change()
+        df.dropna(how="all", axis="index", inplace=True)
         return df
 
     def get_economical(self):
         """Returns economic indicators."""
         if self.joint_dataframe is None: self.get_joint_dataframe()
 
-        symbols = filter(lambda s: self.files[s]["category"] == "economic-calendar", self.files)
+        # define sorted list of symbols
+        sorted_symbols = sorted(self.files, key=lambda s: self.files[s]["category"])
+
+        symbols = filter(lambda s: self.files[s]["category"] == "economic-calendar", sorted_symbols)
+        if not symbols: return None
         symbols = map(lambda s: (self._get_category(s), s), symbols)
 
         df = self.joint_dataframe.filter(items=symbols)
