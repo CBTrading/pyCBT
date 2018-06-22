@@ -27,7 +27,7 @@ sp500_sectors_symbols = [
     "Industrials",
     "Inf. tech.",
     "Materials",
-    "Real state",
+    "Telecom services",
     "Utilities"
 ]
 stocks_symbols = [
@@ -121,7 +121,7 @@ investing_params = [
     {"category": "economic-calendar", "instrument": "unemployment-rate-300"}
 ]
 all_symbols = indices_symbols + sp500_sectors_symbols + stocks_symbols + commodities_symbols + currencies_symbols + economical_symbols
-features_params = OrderedDict(zip(all_symbols, investing_params))
+sp500_features = OrderedDict(zip(all_symbols, investing_params))
 features_types = OrderedDict(zip(all_symbols, indicator_types))
 
 extra_columns = ["Class", "Year", "Month", "DayWeek"]
