@@ -10,6 +10,7 @@ from pyCBT.common.timezone import parse_tz, timezone_shift
 
 if "en_US" not in locale.getdefaultlocale(): locale.setlocale(locale.LC_ALL, "en_US")
 
+# TODO: implement mixin class
 class table_has_changed_from(object):
     """An expectation for checking the table has changed.
 
@@ -37,14 +38,21 @@ class EconomicData(object):
     TABLE_ID = "eventHistoryTable{id}"
     SHOW_MORE_ID = "showMoreHistory{id}"
 
-    def __init__(self, calendar, from_date, to_date, datetime_format="%Y-%m-%d", browser=None):
+    def __init__(self, url, from_date, to_date, datetime_format="%Y-%m-%d", browser=None):
+        # TODO: check the url is for a economic calendar
+        if "economic-calendar" not in url:
+            raise ValueError, "The given url does not look like an economic calendar."
+        # TODO: parse url
+
+        self.url = url
+        _ = self.url.split("/")
+        _ = _[-1].split("-")
+        self.calendar, self.id = string.join(_[:-1], "-"), _[-1]
+
         self.timezone = "America/New_York"
         self.datetime_format = datetime_format
         self.from_date = parse_tz(from_date, in_tz=None)
         self.to_date = parse_tz(to_date, in_tz=None)
-
-        _ = calendar.split("-")
-        self.calendar, self.id = string.join(_[:-1], "-"), _[-1]
 
         self.browser = webdriver.Chrome() if not browser else browser
 
@@ -133,14 +141,17 @@ class EconomicData(object):
 class FinancialData(object):
     URL = "https://www.investing.com/{category}/{instrument}-historical-data"
 
-    def __init__(self, category, instrument, resolution, from_date, to_date, datetime_format="%Y-%m-%d", browser=None):
+    def __init__(self, url, resolution, from_date, to_date, datetime_format="%Y-%m-%d", browser=None):
         self.timezone = "America/New_York"
         self.datetime_format = datetime_format
-        self.category = category
-        self.instrument = instrument
+        self.url = url
         self.resolution = resolution
         self.from_date = parse_tz(from_date, in_tz=None)
         self.to_date = parse_tz(to_date, in_tz=None)
+
+        _ = self.url.split("/")
+        self.instrument = _.pop()
+        self.category = string.join(_[_.index("www.investing.com")+1:], "/")
 
         self.browser = webdriver.Chrome() if not browser else browser
         self.browser.get(self.URL.format(category=self.category, instrument=self.instrument))
