@@ -19,7 +19,7 @@ def parse_args(*args, **kwargs):
     parser.add_argument(
         "--from-date",
         help="Starting date in dataset. Defaults to first register in table.",
-        default=datetime(1995, 1, 1).isoformat()
+        default=datetime(1995, 1, 1).strftime("%Y-%m-%d")
     )
     parser.add_argument(
         "--to-date",
@@ -42,7 +42,7 @@ def parse_args(*args, **kwargs):
     args = parser.parse_args()
 
     if args.to_date is None:
-        args.to_date = datetime.now(tz=pytz.timezone("America/New_York")).isoformat()
+        args.to_date = datetime.now(tz=pytz.timezone("America/New_York")).strftime(args.datetime_format)
 
     return args._get_args(), dict(args._get_kwargs())
 
