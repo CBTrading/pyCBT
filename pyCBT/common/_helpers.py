@@ -1,6 +1,52 @@
-# TODO: define argument parser
+"""_helpers module
+
+This module contains useful functions for the pyCBT scripts.
+"""
+
+# TODO: implement naming the instrument
+# TODO: implement argument for naming the calendars
+# TODO: implement several values-for-one-option parsing
+# TODO: add interactive option
+# TODO: add verbose option
+def parse_args(*args, **kwargs):
+    """Returns the passed command line arguments.
+    """
+    import argparse, sys, pytz
+    from datetime import datetime
+
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument(
+        "url",
+        help="The instrument url in www.investing.com. E.g., www.investing.com/equities/apple-computer-inc."
+    )
+    parser.add_argument(
+    	"--resolution",
+    	choices=["Daily", "Weekly", "Monthly"],
+    	default="Daily",
+    	help="The time resolution of data"
+    )
+    parser.add_argument(
+        "--from-date",
+        help="Start date in dataset. Defaults to first register in table.",
+        default=datetime(1995, 1, 1).strftime("%Y-%m-%d")
+    )
+    parser.add_argument(
+        "--to-date",
+        help="End date in dataset. Defaults to now in New York.",
+        default=datetime.now(tz=pytz.timezone("America/New_York")).strftime("%Y-%m-%d")
+    )
+    parser.add_argument(
+        "--save-to", "-s",
+        help="Stores the dataset in the given filename. Supported extensions are .csv (default if extension is missing) or .xlsx file. If .xlsx and a second argument (comma-separated) value is given, it is taken to be the name of the sheet."
+    )
+    args = parser.parse_args()
+
+    return args._get_args(), dict(args._get_kwargs())
 
 def dump_data(*args, **kwargs):
+    """Writes data in screen or into a file.
+    """
     import os, sys
     from pyCBT.common.files import exist
     from openpyxl import load_workbook
