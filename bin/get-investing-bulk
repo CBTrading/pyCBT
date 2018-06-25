@@ -19,15 +19,22 @@ from pyCBT.common._helpers import dump_data
 from pyCBT.common.path import exist
 
 
-idate = datetime(2000, 1, 1).strftime("%Y-%m-%d")
-fdate = datetime.now(tz=pytz.timezone("America/New_York")).strftime("%Y-%m-%d")
-
 parser = argparse.ArgumentParser()
 
 parser.add_argument(
     "symbols_list",
     metavar="path",
     help="File containing the symbols list. The file should be formatted in two columns: symbol name and investing link."
+)
+parser.add_argument(
+    "--from-date",
+    help="Start date in dataset. Defaults to first register in table.",
+    default=datetime(1995, 1, 1).strftime("%Y-%m-%d")
+)
+parser.add_argument(
+    "--to-date",
+    help="End date in dataset. Defaults to now in New York.",
+    default=datetime.now(tz=pytz.timezone("America/New_York")).strftime("%Y-%m-%d")
 )
 parser.add_argument(
     "--resolution",
@@ -42,7 +49,7 @@ filelist = args.symbols_list
 if not exist(filelist):
     raise IOError, "The symbols list '{}' does not exist.".format(filelist)
 else:
-    features_params = dict()
+    symbols_params = dict()
     with open(filelist, "r") as f:
         line = f.readline()[:-1]
         while line:
@@ -52,41 +59,41 @@ else:
             # remove domain
             if "https" in url: investing_params = url.replace("https://www.investing.com/", "").split("/")
             else: investing_params = url.replace("www.investing.com/", "").split("/")
-            # parse category and instrument
+            # parse category and symbol
             category = join(investing_params[:-1], "/")
             instrument = investing_params[-1].strip("/")
-            # define features parameters
-            features_params[symbol] = dict(category=category, instrument=instrument)
+            # define symbols parameters
+            symbols_params[symbol] = {
+                "filename": "{}_{}_{}.csv".format(
+                    category.replace("/", "-"),
+                    "monthly" if category == "economic-calendar" else args.resolution.lower(),
+                    instrument
+                ),
+                "url": url
+            }
 
 chrome = webdriver.Chrome()
-for feature in features_params:
-    print "downloading {}...".format(feature),
+for symbol in symbols_params:
+    print "downloading {}...".format(symbol),
 
-    category = features_params.get(feature)["category"]
-    instrument = features_params.get(feature)["instrument"]
+    filename = symbols_params[symbol]["filename"]
+    if exist(filename):
+        print "done"
+        continue
 
     if category == "economic-data":
-        filename = "{}_{}.csv".format(category.replace("/", "-"), feature)
-        if exist(filename):
-            print "done"
-            continue
         investing_data = investing.EconomicData(
-            calendar=instrument,
-            from_date=idate,
-            to_date=fdate,
+            url=symbols_params[symbol]["url"],
+            from_date=args.from_date,
+            to_date=args.to_date,
             browser=chrome
         )
     else:
-        filename = "{}_{}_{}.csv".format(category.replace("/", "-"), args.resolution.lower(), feature)
-        if exist(filename):
-            print "done"
-            continue
         investing_data = investing.FinancialData(
-            category=category,
-            instrument=instrument,
+            url=symbols_params[symbol]["url"],
             resolution=args.resolution,
-            from_date=idate,
-            to_date=fdate,
+            from_date=args.from_date,
+            to_date=args.to_date,
             browser=chrome
         )
 
