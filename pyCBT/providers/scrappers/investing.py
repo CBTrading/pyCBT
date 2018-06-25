@@ -7,8 +7,8 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from pyCBT.common.timezone import parse_tz, timezone_shift
 
-# locale.setlocale(locale.LC_ALL, "en_US")
 
+if "en_US" not in locale.getdefaultlocale(): locale.setlocale(locale.LC_ALL, "en_US")
 
 class table_has_changed_from(object):
     """An expectation for checking the table has changed.
