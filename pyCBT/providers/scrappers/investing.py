@@ -8,7 +8,8 @@ from selenium.webdriver.support import expected_conditions as EC
 from pyCBT.common.timezone import parse_tz, timezone_shift
 
 
-if "en_US" not in locale.getdefaultlocale(): locale.setlocale(locale.LC_ALL, "en_US")
+# if "en_US" not in locale.getdefaultlocale(): locale.setlocale(locale.LC_ALL, "en_US")
+locale.setlocale(locale.LC_ALL, "en_US")
 
 # TODO: implement mixin class
 class table_has_changed_from(object):
