@@ -36,7 +36,7 @@ class DriveTables(object):
         for file in self.client.ListFile({"q": "'{}' in parents".format(self.DATA_ID)}).GetList():
             category, resolution, symbol = self._parse_filename(file.get("title"))
             if resolution != self.resolution: continue
-            self.files[symbol] = dict(category=category, id=file.get("id"))
+            self.files[symbol.replace("-", " ")] = dict(category=category, id=file.get("id"))
 
         if self.ref_symbol not in self.files:
             raise ValueError, "Symbol '{}' not found.".format(self.ref_symbol)
