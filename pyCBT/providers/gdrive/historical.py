@@ -34,8 +34,7 @@ class DriveTables(object):
         # initialize files list from Google Drive
         self.files = {}
         for file in self.client.ListFile({"q": "'{}' in parents".format(self.DATA_ID)}).GetList():
-            filename = file.get("title")
-            category, resolution, symbol = self._parse_filename(filename)
+            category, resolution, symbol = self._parse_filename(file.get("title"))
             if resolution != self.resolution: continue
             self.files[symbol] = dict(category=category, id=file.get("id"))
 
@@ -54,8 +53,7 @@ class DriveTables(object):
 
     def _parse_filename(self, filename):
         """Returns category, resolution and symbol corresponding to given filename."""
-        category, resolution, symbol = filename.replace(".csv", "").split("_")
-        return category, resolution, symbol
+        return filename.replace(".csv", "").split("_")
 
     def _parse_category(self, **kwargs):
         """Returns category name of given symbol or raw category."""
