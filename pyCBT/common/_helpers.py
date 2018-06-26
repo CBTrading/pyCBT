@@ -29,7 +29,7 @@ def parse_args(*args, **kwargs):
     parser.add_argument(
         "--from-date",
         help="Start date in dataset. Defaults to first register in table.",
-        default=datetime(1995, 1, 1).strftime("%Y-%m-%d")
+        default=datetime(2000, 1, 1).strftime("%Y-%m-%d")
     )
     parser.add_argument(
         "--to-date",
