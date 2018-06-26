@@ -81,7 +81,7 @@ for symbol in symbols_params:
         print "done"
         continue
 
-    if category == "economic-data":
+    if category == "economic-calendar":
         investing_data = investing.EconomicData(
             url=symbols_params[symbol]["url"],
             from_date=args.from_date,
