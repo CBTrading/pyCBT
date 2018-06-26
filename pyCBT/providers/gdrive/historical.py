@@ -10,11 +10,14 @@ from pyCBT.providers.gdrive.account import get_client
 from pyCBT.common.path import exist
 
 
+# TODO: implement listing of available instruments
+# TODO: implement selection of instruments
+# TODO: implement download of selected instruments
 class DriveTables(object):
     # parent ID of data tables in Google Drive
     RESOLUTIONS = ["daily", "weekly", "monthly"]
 
-    def __init__(self, reference, resolution="daily", client=None, drive_data_id="1etaxbcHUa8YKiNw0tEkIyMtnC8DShRxQ"):
+    def __init__(self, reference, drive_data_id, resolution="daily", client=None):
         if resolution not in self.RESOLUTIONS:
             raise ValueError, "{} not in resolution valid values: {}".format(resolution, string.join(self.RESOLUTIONS, ", "))
         # authenticate user & start Google Drive client
@@ -51,7 +54,8 @@ class DriveTables(object):
 
     def _parse_filename(self, filename):
         """Returns category, resolution and symbol corresponding to given filename."""
-        return filename.replace(".csv", "").split("_")
+        category, resolution, symbol = filename.replace(".csv", "").split("_")
+        return category, resolution, symbol
 
     def _parse_category(self, **kwargs):
         """Returns category name of given symbol or raw category."""
@@ -113,6 +117,7 @@ class DriveTables(object):
             category_name = self._parse_category(category=category)
             # extract symbols of current category
             cat_symbols = sorted(filter(lambda s: self.files[s]["category"] == category, self.files))
+            symbols_names = map(lambda s: s.replace("-", " "))
             # fill tables list with symbols of current category
             table = pd.DataFrame(
                 index=ref_index,
