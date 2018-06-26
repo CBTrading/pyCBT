@@ -67,7 +67,7 @@ else:
                 "filename": "{}_{}_{}.csv".format(
                     category.replace("/", "-"),
                     "monthly" if category == "economic-calendar" else args.resolution.lower(),
-                    instrument
+                    symbol.replace(" ", "-")
                 ),
                 "url": url
             }
