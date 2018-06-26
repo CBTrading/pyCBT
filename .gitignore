@@ -109,7 +109,3 @@ data/
 *.csv
 *.p
 *.yml
-
-# for privacy
-bin
-scrappers
