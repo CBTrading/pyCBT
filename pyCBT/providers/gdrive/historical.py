@@ -115,7 +115,7 @@ class DriveTables(object):
             category_name = self._parse_category(category=category)
             # extract symbols of current category
             cat_symbols = sorted(filter(lambda s: self.files[s]["category"] == category, self.files))
-            symbols_names = map(lambda s: s.replace("-", " "))
+            cat_symbols = map(lambda s: s.replace("-", " "), cat_symbols)
             # fill tables list with symbols of current category
             table = pd.DataFrame(
                 index=ref_index,
