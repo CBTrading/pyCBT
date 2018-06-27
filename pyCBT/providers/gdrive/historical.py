@@ -36,7 +36,7 @@ class DriveTables(object):
         for file in self.client.ListFile({"q": "'{}' in parents".format(self.DATA_ID)}).GetList():
             category, resolution, symbol = self._parse_filename(file.get("title"))
             if resolution != self.resolution: continue
-            self.files[symbol.replace("-", " ")] = dict(category=category, id=file.get("id"))
+            self.files[symbol] = dict(category=category, id=file.get("id"))
 
         if self.ref_symbol not in self.files:
             raise ValueError, "Symbol '{}' not found.".format(self.ref_symbol)
@@ -53,7 +53,9 @@ class DriveTables(object):
 
     def _parse_filename(self, filename):
         """Returns category, resolution and symbol corresponding to given filename."""
-        return filename.replace(".csv", "").split("_")
+        category, resolution, symbol = filename.replace(".csv", "").split("_")
+        symbol = symbol.replace("-", " ")
+        return category, resolution, symbol
 
     def _parse_category(self, **kwargs):
         """Returns category name of given symbol or raw category."""
