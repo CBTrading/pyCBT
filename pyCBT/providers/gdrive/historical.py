@@ -53,6 +53,7 @@ class DriveTables(object):
 
     def _parse_filename(self, filename):
         """Returns category, resolution and symbol corresponding to given filename."""
+        print filename
         category, resolution, symbol = filename.replace(".csv", "").split("_")
         symbol = symbol.replace("-", " ")
         return category, resolution, symbol
