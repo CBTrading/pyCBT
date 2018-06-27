@@ -175,7 +175,7 @@ class DriveTables(object):
 
         symbols = filter(lambda s: self.files[s]["category"] == "economic-calendar", sorted_symbols)
         if not symbols: return None
-        symbols = map(lambda s: (self._get_category(s), s), symbols)
+        symbols = map(lambda s: (self._parse_category(s), s), symbols)
 
         df = self.joint_dataframe.filter(items=symbols)
         return df
