@@ -35,7 +35,7 @@ class DriveTables(object):
         self.files = {}
         for file in self.client.ListFile({"q": "'{}' in parents".format(self.DATA_ID)}).GetList():
             category, resolution, symbol = self._parse_filename(file.get("title"))
-            if (category == "economic-calendar" and resolution == "Monthly") or resolution == self.resolution:
+            if category == "economic-calendar" or resolution == self.resolution:
                 self.files[symbol] = dict(category=category, id=file.get("id"))
 
         if self.ref_symbol not in self.files:
