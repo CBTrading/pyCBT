@@ -41,11 +41,11 @@ setup(
     tests_require=["nose"],
     scripts=[
         "bin/cbt-config",
-        "bin/get-investing-calendar",
-        "bin/get-investing-financial",
+        # "bin/get-investing-calendar",
+        # "bin/get-investing-financial",
         "bin/get-wti-candles",
 #         "bin/sp500-today-features",
-        "bin/get-investing-bulk",
-        "bin/sp500-intraday"
+        # "bin/get-investing-bulk",
+        # "bin/sp500-intraday"
     ],
 )
